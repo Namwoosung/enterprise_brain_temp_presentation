@@ -102,7 +102,7 @@
   - W3C R2RML (2012), Ontop 문서
   - ISO 14224:2016, Industrial Ontologies Foundry(IOF) Core
 
-## Q004. 저장 구조 이야기를 발표 뒷부분에 추가해야 하나? Neo4j 중심이면 빈약해 보이나? `[x]`
+## Q004. 저장 구조 이야기를 발표 뒷부분에 추가해야 하나? Neo4j 중심이면 빈약해 보이나? `[x]`(정리 미포함)
 - **질문**: Q003 내용(원본·정제·온톨로지·그래프를 나눠 관리)을 발표 뒷부분에 추가하는 게 좋은가? Neo4j 기준으로 진행했는데 이대로 마무리하면 빈약해 보이나? "속성 그래프 하나로 다 하지 않고 이렇게 구성해 관리해야 한다"는 페이지를 넣는 게 나은가?
 - **답 요약**:
   - 핵심 메시지는 이미 있다. P23 "적재: 저장소마다 역할을 나누고…"가 파일·RDB·Git은 기준이고 그래프·벡터는 사본이라고 말한다. 따라서 "속성 그래프 하나로 다 한다"는 덱은 아니다.
@@ -212,14 +212,14 @@
   - Li et al., "Deep Entity Matching with Pre-Trained Language Models (Ditto)", *VLDB* (2020)
   - Splink 문서(moj-analytical-services.github.io/splink)
 
-## Q008. 데모의 Neo4j 로그인 비밀번호를 임의로 설정했나? `[ ]`
+## Q008. 데모의 Neo4j 로그인 비밀번호를 임의로 설정했나? `[ ]`(정리 미포함)
 - **질문**: demo는 띄웠는데 Neo4j 로그인이 필요하다. 비밀번호를 임의로 정해 두었나?
 - **답 요약**:
   - 그렇다. 데모를 만들 때 Docker 컨테이너 `eb-neo4j`를 처음 띄우면서 임의 비밀번호를 생성해 설정했다.
   - 비밀번호는 `demo/.env`의 `NEO4J_PASSWORD`에만 있다. 사용자명은 `neo4j`이다.
   - Neo4j 비밀번호는 컨테이너를 **처음** 만들 때(데이터 볼륨이 비어 있을 때) `NEO4J_AUTH`로 한 번 정해진다. 나중에 `.env`만 바꾸면 로그인이 안 맞으므로, 바꾸려면 Neo4j에서 `ALTER CURRENT USER SET PASSWORD`로 바꾼 뒤 `.env`도 같이 고친다.
 
-## Q009. "온톨로지 · 용어 사전 · 검증 규칙을 Git으로 관리"의 Git은 버전 관리 Git인가? `[x]`
+## Q009. "온톨로지 · 용어 사전 · 검증 규칙을 Git으로 관리"의 Git은 버전 관리 Git인가? `[x]`(정리 미포함)
 - **질문**: 온톨로지와 용어 사전, 검증 규칙은 사람이 정하고 git으로 관리한다고 되어 있는데, 여기서 git은 버전 관리하는 그 git이 맞나?
 - **답 요약**:
   - 맞다. 소스 코드를 관리하는 그 Git이다. 정의 파일(YAML)을 코드처럼 다루자는 뜻이다("schema as code", GitOps와 같은 생각).
@@ -426,3 +426,18 @@
 - **출처**:
   - Apache Airflow 공식 문서(airflow.apache.org/docs) · "Airflow 3.0 is here" 블로그(2025-04)
   - Astronomer, "Intro to Airflow 3"
+
+## Q021. 활용할 수 있는 서비스 · 플랫폼의 라이선스와 각각의 주의사항은? `[ ]`
+- **질문**: 내가 활용할 수 있는 서비스들이나 플랫폼들의 라이선스는? 각각의 주의사항은?
+- **답 요약**:
+  - 대부분(Airflow, DuckDB, Parquet, Splink, LinkML, vLLM, APOC, neo4j 드라이버)은 MIT · Apache-2.0이라 사내 사용에 제약이 거의 없다.
+  - **Neo4j Community는 GPL-3.0**: 사내에서 그대로 쓰는 건 무료. 수정본을 외부 배포할 때만 소스 공개 의무. 클러스터 · RBAC · 키 제약 등은 Enterprise(상용)만 있다. Desktop의 무료 Enterprise는 로컬 개발용이다.
+  - **NVL은 Neo4j 상용 고객 · Aura 전용 독점 라이선스**라 Community와 못 쓴다. Neo4j Browser는 GPL-3.0이라 그대로 쓰는 건 괜찮다.
+  - **모델 라이선스가 가장 주의할 부분**:
+    - GLM-5.3은 MIT가 아닌 자체 라이선스다. Model-as-a-Service 사업을 하는 라이선시나 계열사의 합산 매출이 12개월 100억 달러를 넘으면 상업 이용 전에 Z.AI 보안 심사가 필요하다. 대기업 계열사면 법무 검토가 필요하고, GLM-5.3-Flash는 MIT로 표기되어 있다.
+    - Qwen3.7-Flash는 가중치가 공개되지 않은 API 전용으로 보도된다. vLLM으로 직접 띄우려면 공개 모델(예: Qwen3.8-Flash-Next, `qwen-community-1.0` 라이선스)과 그 약관을 확인해야 한다.
+  - 그 밖에: Zingg는 AGPL이라 사내 정책상 피하는 경우가 많다. Docker Desktop은 직원 250명 또는 연매출 1천만 달러를 넘는 기업이면 유료 구독 대상이다. Aura · 외부 LLM API · Auto Ontology 기본 NIM 엔드포인트는 데이터가 외부로 나간다.
+  - 상세 표와 출처는 `study/licenses.md`. 법률 자문이 아니므로 도입 전 LICENSE 원문과 사내 법무를 확인한다.
+- **키워드**: GPL-3.0, AGPL-3.0, Apache-2.0, MIT, BSL 1.1, copyleft, Neo4j open core, NVL license, model license, GLM-5.3 License, qwen-community, Docker subscription
+- **반영 후보**: 발표에는 넣지 않음. 30장 "목표 아키텍처" 질의응답 대비 자료. 데모 README의 Docker 안내에 Docker Desktop 유료 조건 한 줄 추가 검토.
+- **출처**: `study/licenses.md`의 출처 목록(Neo4j Licensing, NVL 라이선스 페이지, 각 저장소 LICENSE, GLM-5.3 LICENSE, Qwen 모델 페이지 등)
