@@ -1,0 +1,19 @@
+/* step visibility + focus (A-3) */
+[data-v],[data-tr]{transition:opacity var(--t-fast) ease, transform .45s cubic-bezier(.3,.7,.2,1)}
+.off{opacity:0 !important;pointer-events:none}
+.is-past{opacity:.42}
+.gone{opacity:0 !important;transition:opacity .2s ease .32s, transform .45s cubic-bezier(.3,.7,.2,1) !important}
+/* draw: path with pathLength=1 */
+path.draw{stroke-dasharray:1 1;stroke-dashoffset:0;transition:stroke-dashoffset .55s ease, opacity .15s}
+path.draw.off{stroke-dashoffset:1}
+/* pulse once on new */
+@keyframes pulse1{0%{box-shadow:0 0 0 0 rgba(94,234,212,.55)}100%{box-shadow:0 0 0 14px rgba(94,234,212,0)}}
+.is-new.pulse{animation:pulse1 .7s ease-out 1}
+/* zoom (background cloud) */
+.zoomable{transition:transform .6s cubic-bezier(.3,.7,.2,1), opacity .45s}
+/* snap: finish running transitions instantly */
+.instant *,.instant{transition:none !important;animation:none !important}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition:none !important;animation:none !important}
+}
+.zoomable.zoomed{transform:scale(2.4);opacity:.08 !important}

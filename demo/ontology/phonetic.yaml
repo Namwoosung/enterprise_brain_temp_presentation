@@ -1,0 +1,24 @@
+# STT pronunciation -> written form, applied before lexicon lookup (pipeline/clean.py).
+# STT engines often spell codes, units and numbers in Hangul.
+# CUSTOMIZE: add the readings your STT engine produces.
+version: 1.0.0
+
+# Plain replacements (longest key is applied first).
+map:
+  피티 브이 사십이: PT-V42
+  알에프 제너레이터: RF 제너레이터
+  오백 밀리토르: 500 mTorr
+  밀리토르: mTorr
+  삼백십이 번: 312번
+  삼백십이: "312"
+  피엠 주기: PM 주기
+  이백오: "205"
+  에이동: A동
+  비동: B동
+  십칠 호기: 17호기
+  십팔 호기: 18호기
+  스로틀밸브: 스로틀 밸브
+
+# Replacements that are only safe right after a given written form
+# ("에스" alone is a normal syllable; only "ALM 에스" style codes would need this). Not needed for this demo.
+after: []

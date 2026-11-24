@@ -1,0 +1,31 @@
+# Whitelist: only the deck, the demo and the root docs go to git.
+# Everything else in this folder (planning notes, old deck versions, the local
+# LLM proxy, editor settings) stays local.
+/*
+!/.gitignore
+!/README.md
+!/presentation/
+!/demo/
+
+# Never commit secrets or machine-specific files
+.env
+*.env.local
+token*.txt
+*.log
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Demo run artifacts are regenerated; LLM recordings are kept for replay mode
+/demo/runs/*
+!/demo/runs/recorded/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

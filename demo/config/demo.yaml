@@ -1,0 +1,128 @@
+# Demo configuration. CUSTOMIZE: inputs, thresholds, cleaning patterns, CQs, Browser views.
+paths:
+  ontology: ontology/ontology.v1.yaml
+  lexicon: ontology/lexicon.v1.yaml
+  phonetic: ontology/phonetic.yaml
+  entities: data/sources/entities.yaml
+  reference: data/sources/reference_docs.yaml
+  runs: runs
+
+# Order matters for the story: CMMS sync first (structured, rule mapping), then the two documents.
+inputs:
+  - id: cmms
+    label: CMMS 작업기록 · 정형
+    file: data/inputs/cmms_wo_export.csv
+    meta:   # a CSV has no front matter: the collection record takes these from here
+      doc_id: CMMS-WO
+      kind: cmms_csv
+      title: CMMS 정비 작업 증분 export (cursor 2026-03-01 이후)
+      date: 2026-03-07 11:30
+      source_id: cmms.work_order
+  - id: mail
+    label: 메일 · 교체 완료 회신
+    file: data/inputs/mail_t311.md
+  - id: stt
+    label: 회의록 STT · 주간 설비회의
+    file: data/inputs/meeting_m201.stt.md
+
+steps:
+  - {id: collect,  label: 수집}
+  - {id: clean,    label: 정제}
+  - {id: extract,  label: 추출}
+  - {id: resolve,  label: 연결}
+  - {id: validate, label: 검증}
+  - {id: load,     label: 적재}
+
+cleaning:
+  mail:
+    thread_markers: ["-----Original Message-----", "-----원본 메시지-----"]
+    signature_patterns: ['^\S+(\s\S+)?\s*\|\s*.+\|']   # "이름 직급 | 팀 | 내선"
+    disclaimer_patterns: ['^본 메일은', '^This e-?mail']
+    closing_lines: ["감사합니다.", "감사합니다"]
+  stt:
+    fillers: ["어", "음", "저기"]                       # removed as standalone tokens
+    leading_fillers: ["네"]                             # removed only at the start of an utterance ("그 건은" keeps its "그")
+    unclear_marker: "(불명확)"
+    min_chars_after_clean: 8                           # shorter segments are dropped
+  cmms:
+    key_columns: [wo_id, updated_at]                   # same key twice in one export -> duplicate row
+    datetime_formats: ["%Y-%m-%d %H:%M", "%Y/%m/%d %H:%M"]
+
+# CMMS column -> ontology mapping (rule-based extraction, no LLM). CUSTOMIZE for your CMMS export.
+cmms_mapping:
+  subject: {class: MaintenanceWork, from: wo_id}
+  facts:
+    - {p: ON_EQUIPMENT,   object_class: Equipment, from: [fab, eq_code], join: " "}
+    - {p: USED_PART_TYPE, object_class: PartType,  from: [part]}
+    - {p: WORK_STATUS,    value_from: status}
+  props: [work_type, started_at, completed_at, technician, description]
+
+resolve:
+  accept: 0.80          # >= accept -> same entity
+  review: 0.50          # review..accept -> human review; below -> no match
+  context_window: 1     # neighbouring chunks used as context
+  fuzzy_min: 0.60       # show fuzzy alternatives above this
+  work_date_days: 0     # a work mention matches a CMMS work order only on the same date (else review)
+
+validate:
+  # wrong values here are costly (equipment history, failure cause) -> always need a supporting source
+  high_risk: [ON_EQUIPMENT, USED_PART_TYPE, CONFIRMED_CAUSE, SUSPECTED_CAUSE, WORK_STATUS]
+  # a "confirmed" claim whose evidence contains one of these is not confirmed (P18 · hedging)
+  hedge_words: [추정, 예정, 아마, 것 같, 얘기가, 확인은 못, 확실하지, 재확인]
+
+llm:
+  temperature: 0
+  max_tokens: 2000
+
+# Competency questions, run before (run 0) and after each load.
+cq:
+  - id: CQ1
+    question: FAB-A EQ-017의 PT-V42 교체·교정 이력과 근거는?
+    cypher: |
+      MATCH (w:MaintenanceWork)-[r1:ON_EQUIPMENT]->(:Equipment {uid:'Equipment:FAB-A/EQ-017'})
+      MATCH (w)-[:USED_PART_TYPE]->(:PartType {uid:'PartType:PT-V42'})
+      RETURN w.code AS 작업, w.work_type AS 유형, w.status AS 상태, w.completed_at AS 완료, r1.sources AS 근거
+      ORDER BY 작업
+  - id: CQ2
+    question: FAB-B EQ-017의 정비 이력은? (FAB-A와 섞이면 ER 오류)
+    cypher: |
+      MATCH (w:MaintenanceWork)-[:ON_EQUIPMENT]->(:Equipment {uid:'Equipment:FAB-B/EQ-017'})
+      OPTIONAL MATCH (w)-[:USED_PART_TYPE]->(p:PartType)
+      RETURN w.code AS 작업, p.code AS 부품, w.completed_at AS 완료 ORDER BY 작업
+  - id: CQ3
+    question: ALM-312가 뜬 설비와 의심할 고장 모드 · 부품은?
+    cypher: |
+      MATCH (e:Equipment)-[:RAISED_ALARM]->(a:Alarm {code:'ALM-312'})-[:INDICATES]->(f:FailureMode)
+      OPTIONAL MATCH (f)-[:FAILURE_OF]->(p:PartType)
+      RETURN e.name AS 설비, f.name AS 고장_모드, p.code AS 부품 ORDER BY 설비, 고장_모드
+  - id: CQ4
+    question: FAB-A EQ-017의 확정된 고장 원인은? (추정이 확정으로 올라가면 오류)
+    cypher: |
+      MATCH (:Equipment {uid:'Equipment:FAB-A/EQ-017'})-[r:CONFIRMED_CAUSE]->(f:FailureMode)
+      RETURN f.name AS 원인, r.sources AS 근거
+  - id: CQ5
+    question: 확인이 필요한 항목(보류 · 질문)은?
+    cypher: |
+      MATCH (r:ReviewItem)
+      RETURN r.kind AS 종류, r.summary AS 내용, r.reason AS 사유 ORDER BY r.rid
+
+# Cypher shown in Neo4j Browser per screen (pre-filled with ?cmd=edit).
+views:
+  baseline: |
+    MATCH p=(a)-[r]->(b) WHERE NOT a:Chunk AND NOT b:Chunk AND NOT a:Document AND NOT b:Document
+      AND NOT a:ReviewItem AND NOT a:OntologyCandidate
+    RETURN p
+  focus: |
+    MATCH (e:Equipment {fab:'FAB-A', code:'EQ-017'})-[r]-(n) WHERE NOT n:Chunk
+    RETURN e, r, n
+  document: |
+    MATCH (d:Document {doc_id:$doc_id})-[:HAS_CHUNK]->(c:Chunk)
+    OPTIONAL MATCH (c)-[m:MENTIONS]->(e)
+    RETURN d, c, m, e
+  diff: |
+    MATCH (n) WHERE n:DiffNew OR n:DiffChanged OR n:DiffHold
+    OPTIONAL MATCH p=(n)-[r]-(m) WHERE NOT m:Chunk
+    RETURN n, p
+  diff_rels: |
+    MATCH p=(a)-[r]->(b) WHERE r.last_run = $run_id AND NOT type(r) IN ['HAS_CHUNK','MENTIONS']
+    RETURN p

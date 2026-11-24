@@ -1,0 +1,26 @@
+/* v3 deck additions */
+.cb{display:flex;align-items:center;gap:10px;padding:0 16px;border:2px solid var(--line);border-radius:10px;background:var(--node);font:600 19px/1.25 var(--sans);transition:border-color var(--t-fast),background var(--t-fast),opacity var(--t-fast),transform .55s cubic-bezier(.3,.7,.2,1)}
+.cb.t-blue{border-color:var(--blue)}.cb.t-green{border-color:var(--green)}.cb.t-orange{border-color:var(--orange)}.cb.t-purple{border-color:var(--purple)}.cb.t-mint{border-color:var(--mint)}.cb.t-red{border-color:var(--red)}
+.cb.center{justify-content:center;text-align:center}
+.hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.hd .no{font:700 18px var(--mono)}
+.hd .nm{font:700 30px var(--sans)}
+.cbx{display:inline-block;width:22px;height:22px;border:2.5px solid var(--sub);border-radius:5px;vertical-align:-4px;margin-right:12px}
+table.tb.big td{padding:13px 14px;font-size:18px}
+table.tb.big th{font-size:16px;padding:10px 14px}
+table.tb.mid td{padding:10px 12px;font-size:17px}
+table.tb td.ctr,table.tb th.ctr{text-align:center}
+pre.code.s15{font-size:15px}pre.code.s16{font-size:16px}pre.code.s18{font-size:18px}
+pre.code .c{color:var(--sub)} pre.code .r{color:var(--red)} pre.code .m{color:var(--mint)}
+.card .ul li{color:var(--fg)}
+.card .ul.sub li{color:var(--sub)}
+.big40{font:700 40px/1.3 var(--sans)}
+.big34{font:700 34px/1.3 var(--sans)}
+.kbd{display:inline-block;font:600 15px/1 var(--mono);border:1.5px solid var(--sub);border-radius:5px;padding:4px 7px;color:var(--fg)}
+.ax{font:600 16px var(--mono);color:var(--sub);letter-spacing:.03em}
+.cell{display:flex;flex-direction:column;justify-content:center;gap:8px}
+.q{font:600 15px var(--mono);color:var(--orange)}
+table.tb.xl td{padding:20px 16px;font-size:20px;line-height:1.4}
+table.tb.xl th{font-size:17px;padding:10px 16px}
+table.tb.lg td{padding:14px 14px;font-size:19px}
+table.tb.lg th{font-size:16px;padding:10px 14px}

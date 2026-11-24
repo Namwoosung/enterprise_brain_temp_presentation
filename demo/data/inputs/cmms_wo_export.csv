@@ -1,0 +1,5 @@
+wo_id,fab,eq_code,serial,work_type,part,status,started_at,completed_at,technician,description,updated_at
+WO-1041,FAB-A,EQ-017,SN-A017,PM,PT-V42,completed,2026-02-10 08:00,2026-02-10 14:30,김OO,정기 PM · 압력센서 교정,2026-02-10 14:35
+WO-1042,FAB-A,EQ-017,SN-A017,CM,P/T V-42,completed,2026/03/06 13:10,2026/03/07 10:20,김OO,챔버 압력 이상(ALM-312) · 압력센서 교체,2026-03-07 10:25
+WO-1042,FAB-A,EQ-017,SN-A017,CM,P/T V-42,completed,2026/03/06 13:10,2026/03/07 10:20,김OO,챔버 압력 이상(ALM-312) · 압력센서 교체,2026-03-07 10:25
+WO-1044,FAB-A,EQ-071,SN-A017,PM,TV-08,planned,2026-03-13 09:00,,이OO,스로틀 밸브 점검 (PT 교체 후속),2026-03-07 11:02

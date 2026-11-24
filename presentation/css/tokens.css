@@ -1,0 +1,7 @@
+:root{
+  --bg:#0B1020; --fg:#EFF4FF; --sub:#9EACC8; --line:#33415D; --panel:#0F162B; --node:#131B33; --gray:#7C8AA8;
+  --blue:#60A5FA; --purple:#B794F4; --green:#34D399; --orange:#FDBA74; --red:#FB7185; --mint:#5EEAD4;
+  --sans:"Pretendard","Pretendard Variable","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --mono:"JetBrains Mono","D2Coding","Cascadia Mono",Consolas,"Malgun Gothic",monospace;
+  --t-fast:.28s;
+}

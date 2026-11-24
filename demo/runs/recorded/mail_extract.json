@@ -1,0 +1,35 @@
+{
+  "name": "mail_extract",
+  "source": "live",
+  "model": "local-llm",
+  "base_url": "http://localhost:10000/v1",
+  "seconds": 5.97,
+  "usage": {
+    "prompt_tokens": 1771,
+    "completion_tokens": 468,
+    "total_tokens": 2239,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "prompt_hash": "daaa3f4385e7",
+  "recorded_at": "2026-11-24 16:53:46",
+  "messages": [
+    {
+      "role": "system",
+      "content": "너는 반도체 팹 설비 정비 지식 그래프에 넣을 사실 후보를 뽑는 추출기다.\n반드시 JSON 하나만 출력한다. 텍스트에 실제로 적힌 내용만 뽑고, 추측으로 보태지 않는다.\n\n관계(predicate) 목록 — 이 목록 밖의 관계는 facts에 넣지 말 것:\n- ON_EQUIPMENT: MaintenanceWork → Equipment (대상 설비)\n- USED_PART_TYPE: MaintenanceWork → PartType (사용 부품)\n- RAISED_ALARM: Equipment → Alarm (알람 발생)\n- SUSPECTED_CAUSE: Equipment → FailureMode (추정 원인)\n- CONFIRMED_CAUSE: Equipment → FailureMode (확정 원인)\n- WORK_STATUS: MaintenanceWork의 status 값 설정 (작업 상태) · value ∈ ['planned', 'in_progress', 'completed']\n- EQUIPMENT_STATE: Equipment의 state 값 설정 (설비 상태 (SEMI E10 분류)) · value ∈ ['productive', 'standby', 'engineering', 'scheduled_down', 'unscheduled_down', 'non_scheduled']\n클래스: Fab(팹), Equipment(설비), EquipmentModel(설비 모델), Vendor(공급사), PartType(부품 유형), FailureMode(고장 모드), Alarm(알람), MaintenanceWork(정비 작업)\n\n이미 알려진 개체(이름 참고용):\n- FAB-A (A동) (Fab)\n- FAB-B (B동) (Fab)\n- ETCH-X300 (유전체 식각) (EquipmentModel)\n- FAB-A/EQ-017 (Equipment)\n- FAB-B/EQ-017 (Equipment)\n- PT-V42 압력센서 (정전용량형 진공 게이지) (PartType)\n- TV-08 스로틀 밸브 (PartType)\n- RF-GEN-13 RF 제너레이터 (PartType)\n- ESC-300 정전척 (PartType)\n- PT-V42 열화 (압력 측정 드리프트) (FailureMode)\n- 스로틀 밸브 고착 (FailureMode)\n- RF 반사전력 증가 (FailureMode)\n- ALM-312 챔버 압력 이탈 (Alarm)\n- WO-1038 RF 제너레이터 교체 (CM) (MaintenanceWork)\n- WO-1040 스로틀 밸브 세정 (PM) (MaintenanceWork)\n- WO-1041 PT-V42 교정 (PM) (MaintenanceWork)\n\n출력 형식:\n{\n  \"facts\": [{\"chunk_id\": \"...\", \"subject\": \"텍스트에 나온 표현 그대로\", \"subject_class\": \"...\",\n             \"predicate\": \"목록의 관계 이름\", \"object\": \"텍스트에 나온 표현 또는 null\", \"object_class\": \"... 또는 null\",\n             \"value\": \"속성 사실(WORK_STATUS 등)일 때만\", \"props\": {}, \"certainty\": \"confirmed | suspected\",\n             \"evidence\": \"근거가 되는 원문 구절 (조각 텍스트에서 그대로 복사)\",\n             \"new_entity_name\": null}],\n  \"out_of_ontology\": [{\"chunk_id\": \"...\", \"subject\": \"...\", \"relation_phrase\": \"텍스트의 관계 표현\",\n                       \"object\": \"...\", \"suggested_relation\": \"대문자_관계_이름\", \"evidence\": \"...\"}],\n  \"unknown_terms\": [{\"chunk_id\": \"...\", \"term\": \"...\", \"guess_class\": \"...\", \"evidence\": \"...\"}],\n  \"unresolved_references\": [{\"chunk_id\": \"...\", \"text\": \"...\", \"why\": \"무엇을 가리키는지 알 수 없는 이유\"}]\n}\n\n규칙:\n1. certainty: \"추정\", \"예정\", \"아마\", \"~것 같다\", \"얘기가 있다\", \"확인은 못 했다\" 같은 표현이 붙으면 suspected.\n   실제로 일어난 일을 단정한 문장(완료했다, 떴다, 바꿨다)은 confirmed.\n2. 방향을 지킨다: 관계 목록의 \"A → B\"에서 subject는 A 클래스, object는 B 클래스다.\n   예) 정비 작업이 설비에서 이뤄짐: ON_EQUIPMENT subject=정비 작업, object=설비.\n   예) 설비에서 알람이 뜸: RAISED_ALARM subject=설비, object=알람.\n3. 정비 작업(교체 · 교정 · 점검)이 나오면 작업 번호가 없어도 MaintenanceWork를 subject로 쓴다.\n   subject에는 그 작업을 가리키는 텍스트 표현을 적고(예: \"P/T V-42 교체\"), 같은 작업에 대한 사실은 모두 같은 subject 문자열을 쓴다.\n   작업 상태는 WORK_STATUS로: 완료 = completed, 예정 = planned, 진행 중 = in_progress.\n   그 작업의 대상 설비(ON_EQUIPMENT)와 사용 부품(USED_PART_TYPE)이 텍스트나 바로 앞뒤 조각에서 분명하면 함께 뽑는다.\n4. 고장 원인: 원인을 \"추정\"한다고 말하면 SUSPECTED_CAUSE(certainty suspected)로 뽑는다.\n   CONFIRMED_CAUSE는 원인이 확정됐다고 단정할 때만 쓴다. 추정을 확정으로 바꾸지 않는다.\n5. 고장 모드 object는 \"부품 + 열화/고착/누설\" 같은 고장 표현 그대로 적는다(예: \"PT-V42 열화\").\n6. subject/object에는 개체를 가리키는 표현만 텍스트 그대로 적는다(조사 · 수식어 제외, 정규화하지 말 것).\n   예) \"A동 17호기(EQ-017)\" → \"A동 17호기\". \"B동 17호기도\" → \"B동 17호기\".\n7. 텍스트가 직접 말하지 않은 관계는 만들지 않는다. 증상만 있고 원인을 말하지 않으면 원인 관계를 만들지 않는다.\n8. 관계 목록에 없는 관계(예: 증상, PM 주기, 모니터링 계획)는 facts가 아니라 out_of_ontology에 넣고,\n   suggested_relation에는 그 의미에 맞는 새 이름(예: HAS_SYMPTOM)을 적는다. 기존 관계 이름을 억지로 쓰지 않는다.\n9. unknown_terms: 알려진 개체 목록에도 없고 관계 목록으로도 표현할 수 없는 설비 · 부품 · 공정 용어만 적는다.\n   알려진 개체의 다른 표기(예: P/T V-42, A동 17호기)는 넣지 않는다.\n10. \"지난번처럼\", \"그 건\", \"저번 것\"처럼 가리키는 대상을 이 문서만으로 알 수 없는 표현은 반드시 unresolved_references에 넣는다.\n11. evidence는 반드시 해당 조각 텍스트의 연속된 일부여야 한다.\n12. 추정 · 소문이라도 관계 목록으로 표현되는 주장이면 facts에서 빼지 말고 certainty=suspected로 넣는다.\n    예) \"C 설비도 같은 문제라는 얘기가 있다\" + 원인이 문맥상 분명 → SUSPECTED_CAUSE, suspected.\n13. new_entity_name은 항상 null로 둔다. 문서에서 새 정비 작업을 만들지 않는다(작업은 CMMS가 기준이다)."
+    },
+    {
+      "role": "user",
+      "content": "문서: RE: RE: EQ-017 압력 이상 · 종류: mail · 작성일: 2026-03-06 18:05\n\n[MAIL-T311#c01] 안녕하세요, A동 17호기(EQ-017) 압력 이상 건 회신드립니다.\n[MAIL-T311#c02] 3/6 오후에 P/T V-42 교체 완료했습니다. 압력은 정상 범위로 돌아왔습니다.\n[MAIL-T311#c03] 교체 후 챔버 압력은 0.5 Torr 근처에서 안정적이고, 24시간 모니터링 후 다시 공유드리겠습니다.\n[MAIL-T311#c04] B동 17호기도 비슷한 압력 흔들림이 있다는 얘기가 있는데, 아직 확인은 못 했습니다."
+    }
+  ],
+  "content": "{\n  \"facts\": [\n    {\n      \"chunk_id\": \"MAIL-T311#c02\",\n      \"subject\": \"P/T V-42 교체\",\n      \"subject_class\": \"MaintenanceWork\",\n      \"predicate\": \"ON_EQUIPMENT\",\n      \"object\": \"A동 17호기\",\n      \"object_class\": \"Equipment\",\n      \"value\": null,\n      \"props\": {},\n      \"certainty\": \"confirmed\",\n      \"evidence\": \"3/6 오후에 P/T V-42 교체 완료했습니다.\",\n      \"new_entity_name\": null\n    },\n    {\n      \"chunk_id\": \"MAIL-T311#c02\",\n      \"subject\": \"P/T V-42 교체\",\n      \"subject_class\": \"MaintenanceWork\",\n      \"predicate\": \"USED_PART_TYPE\",\n      \"object\": \"P/T V-42\",\n      \"object_class\": \"PartType\",\n      \"value\": null,\n      \"props\": {},\n      \"certainty\": \"confirmed\",\n      \"evidence\": \"3/6 오후에 P/T V-42 교체 완료했습니다.\",\n      \"new_entity_name\": null\n    },\n    {\n      \"chunk_id\": \"MAIL-T311#c02\",\n      \"subject\": \"P/T V-42 교체\",\n      \"subject_class\": \"MaintenanceWork\",\n      \"predicate\": \"WORK_STATUS\",\n      \"object\": null,\n      \"object_class\": null,\n      \"value\": \"completed\",\n      \"props\": {},\n      \"certainty\": \"confirmed\",\n      \"evidence\": \"3/6 오후에 P/T V-42 교체 완료했습니다.\",\n      \"new_entity_name\": null\n    }\n  ],\n  \"out_of_ontology\": [\n    {\n      \"chunk_id\": \"MAIL-T311#c04\",\n      \"subject\": \"B동 17호기\",\n      \"relation_phrase\": \"비슷한 압력 흔들림이 있다는 얘기가 있는데\",\n      \"object\": null,\n      \"suggested_relation\": \"HAS_SYMPTOM\",\n      \"evidence\": \"B동 17호기도 비슷한 압력 흔들림이 있다는 얘기가 있는데\"\n    }\n  ],\n  \"unknown_terms\": [],\n  \"unresolved_references\": []\n}"
+}

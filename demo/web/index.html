@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>온톨로지 구축 데모 · 반도체 설비 정비 KG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>온톨로지 구축 데모 <span>· 반도체 설비 정비 KG</span></h1>
+  <div class="status">
+    <span class="pill" id="st-neo4j"><i class="dot"></i>Neo4j</span>
+    <span class="pill" id="st-llm"><i class="dot"></i>LLM</span>
+    <label class="pill">LLM 호출
+      <select id="llm-mode" title="replay: 녹화본 재생 · live: :10000 서버 실제 호출">
+        <option value="replay">녹화본 재생</option>
+        <option value="live">실시간 호출</option>
+      </select>
+    </label>
+    <div class="seg" id="layout-mode" title="화면 배치 · 키보드 1 / 2 / 3">
+      <button data-mode="text">1 설명</button><button data-mode="split">2 나란히</button><button data-mode="graph">3 그래프</button>
+    </div>
+    <button class="btn" id="btn-notes" title="이 단계에서 무엇을 가져다 쓰고 무엇을 만들었나">구현 노트</button>
+    <button class="btn ghost" id="btn-reset" title="그래프를 기준 상태(run 0)로 되돌림">초기화</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<div class="stepper" id="stepper"></div>
+<div class="layout" id="layout">
+  <main id="view"></main>
+  <div class="splitter" id="splitter" title="끌어서 너비 조절 · 두 번 클릭하면 기본값"></div>
+  <aside id="graph">
+    <div class="bar" id="graph-bar"></div>
+    <div class="frame">
+      <iframe id="browser" title="Neo4j Browser"></iframe>
+      <section class="overlay" id="overlay"></section>
+    </div>
+    <div class="hint" id="graph-hint"></div>
+  </aside>
+</div>
+<aside id="notes"></aside>
+<div class="busy" id="busy">실행 중…</div>
+<script src="app.js"></script>
+</body>
+</html>

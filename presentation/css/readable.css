@@ -1,0 +1,51 @@
+/* Readability pass: larger text everywhere (loaded last, overrides earlier sizes). */
+.topbar{font-size:19px}
+.badge-sim{font-size:17px;padding:8px 15px}
+.title{font-size:52px}
+.takeaway{font-size:26px;top:160px}
+.takeaway .k{font-size:14px}
+.footer{font-size:18px}
+.footer .pg,.footer .step{font-size:19px}
+.footer .src{font-size:16px}
+
+.t{font-size:21px}
+.s14{font-size:17px}.s15{font-size:18px}.s16{font-size:19px}.s17{font-size:20px}.s18{font-size:21px}.s19{font-size:22px}
+.s20{font-size:23px}.s22{font-size:25px}.s24{font-size:27px}.s26{font-size:29px}.s28{font-size:31px}.s30{font-size:33px}.s34{font-size:36px}
+
+.card{padding:14px 18px}
+.card h4{font-size:25px}
+.card h5{font-size:17px}
+.card p{font-size:20px}
+.card .big{font-size:31px}
+
+.chip{font-size:19px;padding:4px 11px}
+.chip.sm{font-size:16px;padding:3px 9px}
+.chip.lg{font-size:22px;padding:6px 13px}
+.cb{font-size:22px}
+.pill{font-size:17px;padding:6px 12px}
+.pill.solid{font-size:18px}
+.node .l{font-size:23px}
+.node .s{font-size:17px}
+.tag{font-size:15px}
+.stamp{font-size:21px}
+.num{width:34px;height:34px;font-size:18px}
+
+table.tb{font-size:20px}
+table.tb th{font-size:17px}
+table.tb.tight td{padding:7px 10px}
+table.tb.mid td{font-size:20px}
+table.tb.big td{font-size:21px}
+table.tb.big th{font-size:18px}
+table.tb.lg td{font-size:21px}
+table.tb.lg th{font-size:18px}
+table.tb.xl td{font-size:22px}
+table.tb.xl th{font-size:18px}
+
+pre.code{font-size:19px}
+pre.code.s15{font-size:17px}pre.code.s16{font-size:18px}pre.code.s18{font-size:20px}
+.kv{font-size:20px}
+.quote{font-size:24px}
+.ax{font-size:19px}
+.kbd{font-size:17px}
+.hd .nm{font-size:33px}
+.lane-h .nm{font-size:29px}
