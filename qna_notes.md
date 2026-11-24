@@ -668,3 +668,15 @@
 - **키워드**: 시맨틱 웹, 속성 그래프, LinkML, R2RML · Ontop, GraphRAG, SimpleKGPipeline, 구조화 출력, 멱등 MERGE, staging/publish, bi-temporal, CQ 테스트, 골든셋, run manifest
 - **반영**: P02b(방식 다섯 가지 비교) · P02c(우리 조건 × 방식, 고른 조합, 포기한 것 · 다시 볼 조건) 추가. study/ontology_formats.md 3절(방식별 구현) · 4절(선택 이유), study/01_kg_and_ontology.md 1.6절, 새 문서 study/pipeline_build_guide.md.
 - **출처**: Hogan et al., "Knowledge Graphs" (ACM CSUR 2021) · W3C OWL 2 · SHACL · R2RML · LinkML 문서 · Ontop 문서 · Neo4j Cypher Manual · Neo4j GraphRAG Python 문서 · Microsoft GraphRAG 문서 · vLLM Structured Outputs 문서 · Apache Airflow 3 문서
+
+## Q038. 클론받은 곳에서 덱의 움직임 효과가 안 보이고 스텝이 딱딱 넘어감 `[x]`
+- **질문**: 클론받은 곳에서는 발표자료의 동적인 시각 효과가 안 보이고 스텝별로 딱딱 넘어가던데 정상인가?
+- **답 요약**:
+  - 코드는 같다. CSS · 엔진 파일(`presentation/css/motion.css`, `js/engine/*.js`)은 모두 git에 올라가 있다.
+  - 효과는 원래 짧고 은은하다. 나타나기 0.28초 페이드, 이동 0.45초, 선 그리기 0.55초, 새 요소 테두리 펄스 1회.
+  - 가장 흔한 원인은 그 PC의 OS 설정이다. `motion.css`는 `prefers-reduced-motion: reduce`이면 모든 전환을 끈다. Windows에서 "설정 → 접근성 → 시각 효과 → 애니메이션 효과"가 꺼져 있으면(회사 PC 정책 · 원격 데스크톱 · VDI · 절전 모드에서 자주 꺼짐) 브라우저가 이 값을 켠다. macOS는 "손쉬운 사용 → 디스플레이 → 동작 줄이기".
+  - 두 번째 원인: 0.6초 안에 키를 연달아 누르면 이전 전환을 끝 상태로 바로 맞춘다(`nav.js`). 천천히 넘기면 보인다.
+  - 확인: 그 PC 브라우저 콘솔에서 `matchMedia('(prefers-reduced-motion: reduce)').matches`가 `true`면 OS 설정 때문.
+- **키워드**: prefers-reduced-motion, 애니메이션 효과, CSS transition, motion.css
+- **반영**: `motion.css`에서 OS 설정을 따르던 규칙을 지워, 어느 PC에서든 효과가 켜지게 했다. 끄고 싶으면 주소 끝에 `?motion=off`(예: `index.html?motion=off#P07-1`). 0.6초 안 연타 시 바로 맞추는 동작은 그대로.
+- **출처**: MDN "prefers-reduced-motion" · Windows 설정 접근성 → 시각 효과

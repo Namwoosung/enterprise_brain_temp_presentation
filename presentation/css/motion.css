@@ -13,7 +13,6 @@ path.draw.off{stroke-dashoffset:1}
 .zoomable{transition:transform .6s cubic-bezier(.3,.7,.2,1), opacity .45s}
 /* snap: finish running transitions instantly */
 .instant *,.instant{transition:none !important;animation:none !important}
-@media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{transition:none !important;animation:none !important}
-}
+/* OS의 '동작 줄이기' 설정과 상관없이 효과를 켭니다. 끄려면 주소 끝에 ?motion=off */
+.still *,.still *::before,.still *::after{transition:none !important;animation:none !important}
 .zoomable.zoomed{transform:scale(2.4);opacity:.08 !important}

@@ -1,6 +1,7 @@
 /* Keyboard-only navigation, stage scaling, deep links (#P07-3), notes sync. */
 (function () {
   const stage = document.getElementById('stage');
+  if (new URLSearchParams(location.search).get('motion') === 'off') document.documentElement.classList.add('still');
   Render.build(stage);
   const slides = DECK.slides;
   let cur = 0, step = 0, lastAt = 0, lastRepeat = 0;
