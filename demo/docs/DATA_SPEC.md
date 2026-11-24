@@ -1,96 +1,87 @@
 # 데이터 형식
 
-모든 데이터는 가상입니다. 부품 · 고장 용어와 설비 상태 분류만 공개된 일반 지식을 따랐습니다.
-
-## 입력 (`data/inputs/`)
-`config/demo.yaml`의 `inputs` 순서대로 넣습니다: CMMS → 메일 → 회의록 STT. 정제 방식은 `kind`로 정해집니다.
-
-### CMMS 작업기록 export (`kind: cmms_csv`) — 정형
-CSV라 머리말이 없습니다. 문서 id · 종류 · 작성 시각은 `config/demo.yaml`의 `inputs[].meta`에 둡니다.
-```csv
-wo_id,fab,eq_code,serial,work_type,part,status,started_at,completed_at,technician,description,updated_at
-WO-1042,FAB-A,EQ-017,SN-A017,CM,P/T V-42,completed,2026/03/06 13:10,2026/03/07 10:20,김OO,...,2026-03-07 10:25
-```
-- 한 행 = 한 조각. `wo_id + updated_at`가 같은 행이 또 오면 중복으로 지웁니다(`cleaning.cmms.key_columns`).
-- 날짜는 `cleaning.cmms.datetime_formats` 중 하나로 읽어 `YYYY-MM-DD HH:MM`으로 맞춥니다.
-- 열 → 관계 매핑은 `cmms_mapping`(LLM 없음). 설비는 `fab + eq_code`로 찾습니다.
-- 데모 파일에는 일부러 넣은 문제가 있습니다: 중복 행(WO-1042), 부품 표기 흔들림(`P/T V-42`), 없는 설비 코드(WO-1044의 `EQ-071`).
+## 입력 문서 (`data/inputs/*.md`)
+YAML 머리말 + 본문 형식입니다. `kind`에 따라 정제 방식이 정해집니다.
 
 ### 메일 (`kind: mail`)
 ```markdown
 ---
-doc_id: MAIL-T311                # 필수 · 문서 id (그래프의 Document.doc_id)
+doc_id: MAIL-2024-0927-01        # 필수 · 문서 id (그래프의 Document.doc_id)
 kind: mail                       # 필수
-title: "RE: RE: EQ-017 압력 이상" # 필수
+title: "RE: RE: ..."             # 필수
 from: 이름 <주소>
 to: 받는 사람
-date: 2026-03-06 18:05           # 필수 · '3/6', '금요일' 같은 날짜 표현의 기준
+date: 2024-09-27 09:12           # 필수 · '어제', '3월' 같은 상대 날짜의 기준
 thread_id: THR-...
 ---
 본문 (한 줄 = 한 조각)
 
-이름 직급 | 팀 | 내선          ← 서명 패턴 (config cleaning.mail.signature_patterns)
-본 메일은 ...                ← 고지문 패턴
------Original Message-----   ← 이 줄부터 끝까지 이전 메일로 보고 제거
-> 인용 줄                    ← '>'로 시작하면 제거
+이름 | 팀 | 내선           ← 서명 패턴 (config cleaning.mail.signature_patterns)
+본 메일은 ...               ← 고지문 패턴
+-----Original Message-----  ← 이 줄부터 끝까지 이전 메일로 보고 제거
+> 인용 줄                   ← '>'로 시작하면 제거
 ```
 
-### 회의록 STT (`kind: meeting_stt`)
+### STT 회의록 (`kind: meeting_stt`)
 ```markdown
 ---
-doc_id: DOC-M201
+doc_id: MTG-2025-0120-W
 kind: meeting_stt
-source_id: MTG-2026-0304-EQ      # 그룹웨어 쪽 원본 id
-title: 주간 설비회의 #12 (STT 자동 기록)
-series: 주간 설비회의             # "지난번처럼"을 풀 때 같은 시리즈를 찾는 단서
-date: 2026-03-04
+title: ...
+date: 2025-01-20
+stt_engine: dummy-stt
 attendees:                       # STT 화자 라벨 → 사람
-  화자1: 이OO 파트장 (설비기술)
+  화자1: 박팀장 (리서치팀)
 ---
-[00:00:04] 화자1: 발화 내용       ← [hh:mm:ss] 화자: 내용  (한 줄 = 한 발화)
-[00:01:28] 화자1: (불명확) ...    ← 불명확 표시 (config cleaning.stt.unclear_marker)
+[00:00:05] 화자1: 발화 내용       ← [hh:mm:ss] 화자: 내용  (한 줄 = 한 발화)
+[00:01:41] 화자3: (불명확) ...    ← 불명확 표시 (config cleaning.stt.unclear_marker)
 ```
 
 ## 마스터 개체 (`data/sources/entities.yaml`)
 ```yaml
 entities:
-  - {class: Equipment, fab: FAB-A, code: EQ-017, name: FAB-A/EQ-017, serial: SN-A017, model: ETCH-X300}
-  - {class: PartType, code: PT-V42, name: PT-V42 압력센서 (정전용량형 진공 게이지)}
-  - {class: MaintenanceWork, code: WO-1041, name: WO-1041 PT-V42 교정 (PM), status: completed, completed_at: "2026-02-10 14:30"}
+  - {class: Company, code: sk-hynix, name: SK hynix, country: kr}   # uid = Company:sk-hynix
+  - {class: Product, code: skh-hbm3e-8h, name: SK hynix HBM3E 8단, status: sampling}
 ```
-- uid는 온톨로지의 `key`로 만듭니다. 설비는 `key: [fab, code]`라 `Equipment:FAB-A/EQ-017`입니다. **EQ-017은 두 FAB에 다 있습니다.**
-- `fab`은 `LOCATED_IN`, `model`은 `INSTANCE_OF`, `vendor`는 `MADE_BY` 관계로도 만들어집니다. 그 밖의 필드는 노드 속성이 됩니다.
-- 이름과(키가 코드 하나뿐인 클래스는) 코드가 용어 사전에 자동으로 들어갑니다. 설비 코드는 넣지 않습니다.
-- `prompt: false`인 개체는 그래프와 사전에는 있지만 LLM 프롬프트의 "알려진 개체" 목록에서는 빠집니다. 이 목록이 바뀌면 프롬프트 해시가 달라지므로 발표 전에 `LLM_MODE=live`로 다시 녹화합니다.
+`country`는 `HEADQUARTERED_IN`, `issued_by`는 `ISSUED_BY`, `targets`는 `TARGETS` 관계로 바뀝니다. 그 밖의 필드는 노드 속성이 됩니다.
 
-## 기준 자료 (`data/sources/reference_docs.yaml`)
+`prompt: false`인 개체는 기준 그래프와 용어 사전에는 들어가지만, LLM 추출 프롬프트의 "알려진 개체" 목록에서는 빠집니다. 프롬프트에는 감시 주제(HBM 공급망)에 필요한 개체만 넣어 길이를 관리합니다. 이 목록을 바꾸면 프롬프트 해시가 달라지므로 발표 전에 `LLM_MODE=live`로 다시 녹화해야 합니다. 기준 그래프만 키우려면 새 개체에 `prompt: false`를 붙이면 녹화본을 그대로 쓸 수 있습니다.
+
+관계의 `key`(온톨로지)는 관계의 정체성에 포함되는 속성입니다. 예를 들어 `SUPPLIES`는 `key: [item]`이라 SK hynix → NVIDIA `{item: HBM3}`와 `{item: HBM3E}`가 서로 다른 관계로 저장되고, 원천 대조도 품목이 같은 기사만 근거로 인정합니다.
+
+## 기사 코퍼스 (`data/sources/news_corpus.yaml`)
 ```yaml
-docs:
-  - id: CMMS-HIST
-    baseline: true
-    official: cmms                # 기준 시스템 — 정비 작업은 CMMS가 기준
-    kind: cmms
-    date: 2026-03-01
-    system: CMMS (정비 관리 시스템)
-    source: cmms.work_order · 2026-03-01 00:00 증분 동기화
-    title: ...
-    summary: ...
+articles:
+  - id: B01
+    baseline: false            # true: 기준 KG를 만듦 / false: 검증 때 대조만
+    date: 2024-03-19
+    publisher: ...
+    url: https://...
+    title: 우리 말로 쓴 제목
+    summary: 우리 말로 쓴 요약 (기사 본문을 복사하지 않음)
     facts:
-      - {s: "MaintenanceWork:WO-1041", p: ON_EQUIPMENT, o: "Equipment:FAB-A/EQ-017"}
-      - {s: "Equipment:FAB-A/EQ-017", p: EQUIPMENT_STATE, value: unscheduled_down}   # 속성 사실
+      - {s: "Product:skh-hbm3e-8h", p: PRODUCT_STATUS, value: mass_production}
+      - {s: "Company:sk-hynix", p: SUPPLIES, o: "Company:nvidia", props: {item: HBM3E}}
+      - {s: "Company:sk-hynix", p: DEVELOPS, o_new: {class: Product, name: ...}}   # 마스터에 없는 개체
+      - {s: "Company:sk-hynix", p: PARTNERS_WITH, o: "Company:tsmc"}             # 온톨로지 밖 관계도 대조용으로 둘 수 있음
 ```
-- `official: cmms | alarm_log`인 자료는 검증의 **기준 시스템**입니다. 문서가 다르면 덮어쓰지 않고 보류합니다.
-- 나머지(SOP · 회의자료 · BOM · FMEA · 공급사 공지)는 기준 KG를 만드는 승인 문서입니다.
 
 ## 용어 사전 (`ontology/lexicon.v1.yaml`)
 ```yaml
 terms:
-  - {ref: "Equipment:FAB-A/EQ-017", pref: FAB-A/EQ-017, alt: [A동 17호기, SN-A017]}
-  - {ref: "Equipment:FAB-A/EQ-017", pref: FAB-A/EQ-017, alt: [EQ-017, 17호기], ambiguous: true,
-     context: [A동, FAB-A]}                    # 같은 코드의 두 설비를 가를 때 쓰는 맥락 단어
-  - {ref: "PartType:PT-V42", pref: PT-V42, alt: [P/T V-42, 압력센서 V42]}
+  - {ref: "Company:sk-hynix", pref: SK hynix, alt: [SK하이닉스, 하이닉스], hidden: [hynix],
+     context: [메모리, HBM]}                       # 동음 별칭을 가를 때 쓰는 맥락 단어
+  - {ref: "Company:sk-inc", pref: SK Inc., alt: [SK], ambiguous: true, context: [지주]}
 ```
 
 ## STT 발음 표 (`ontology/phonetic.yaml`)
-- `map`: 그대로 바꿀 것 (`피티 브이 사십이: PT-V42`, `오백 밀리토르: 500 mTorr`)
-- `after`: 앞 단어가 맞을 때만 바꿀 것 (일반 음절과 겹치는 발음용, 이 데모에서는 비어 있음)
+- `map`: 그대로 바꿀 것 (`에이치비엠: HBM`)
+- `after`: 앞 단어가 맞을 때만 바꿀 것 (`{prev: CoWoS, say: 엘, write: "-L"}`)
+
+## 산출물 (`runs/`)
+| 파일 | 내용 |
+|---|---|
+| `runs/<input>/<step>.json` | 단계 산출물 (웹이 읽음). git에 넣지 않음 |
+| `runs/recorded/<input>_extract.json` | LLM 녹화본: 요청 메시지, 응답, 모델, 시간, 프롬프트 해시. **git에 넣음** |
+| `runs/cq_run0.json` | 초기화 시점의 CQ 답 |
+| `runs/ontology.v1.1.proposal.yaml` | 온톨로지 변경 제안 |

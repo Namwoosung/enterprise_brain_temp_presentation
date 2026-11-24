@@ -1,55 +1,61 @@
-# Known entities ("기준 마스터") — DUMMY fab. reset.py loads all of them into the baseline graph.
-# uid = "<Class>:<key values>" using the ontology key (Equipment key = fab + code -> "Equipment:FAB-A/EQ-017").
-# Names of models / vendors / people are fictional. Part and failure vocabulary follows public
-# descriptions of plasma-etch / CVD / CMP chamber hardware. CUSTOMIZE: replace with your own master.
+# Known entities ("기준 마스터"). reset.py loads all of them into the baseline graph.
+# uid = "<Class>:<code>" (see ontology key). CUSTOMIZE: replace with your own master list.
 #
-# fab / model / vendor     -> structural relations from the master (LOCATED_IN, INSTANCE_OF, MADE_BY)
-# prompt: false            -> kept out of the LLM prompt's "known entities" list (graph + lexicon only)
+# prompt: false  -> in the baseline graph and the lexicon, but NOT in the LLM extraction prompt's
+#                   "known entities" list. The prompt lists only the entities the watched topic
+#                   (HBM supply chain) needs; a long master list makes the prompt longer and noisier.
+#                   Changing which entities are in the prompt changes the prompt hash -> re-record
+#                   (LLM_MODE=live) before presenting.
+# country / issued_by / targets -> structural relations created from the master (HEADQUARTERED_IN,
+#                   ISSUED_BY, TARGETS), not from documents.
 entities:
-  # ---- fabs
-  - {class: Fab, code: FAB-A, name: FAB-A (A동)}
-  - {class: Fab, code: FAB-B, name: FAB-B (B동)}
+  # ---- in the extraction prompt (v1 watch list)
+  - {class: Country, code: us, name: 미국}
+  - {class: Country, code: kr, name: 한국}
+  - {class: Country, code: tw, name: 대만}
 
-  # ---- vendors / models (fictional)
-  - {class: Vendor, code: V-HANBIT, name: 한빛이큅, prompt: false}
-  - {class: Vendor, code: V-ORION, name: Orion Process Tools, prompt: false}
-  - {class: EquipmentModel, code: ETCH-X300, name: ETCH-X300 (유전체 식각), vendor: V-HANBIT}
-  - {class: EquipmentModel, code: CVD-P200, name: CVD-P200 (PECVD), vendor: V-ORION, prompt: false}
-  - {class: EquipmentModel, code: CMP-M300, name: CMP-M300 (CMP), vendor: V-ORION, prompt: false}
+  - {class: Company, code: nvidia,       name: NVIDIA,              country: us}
+  - {class: Company, code: tsmc,         name: TSMC,                country: tw}
+  - {class: Company, code: sk-hynix,     name: SK hynix,            country: kr}
+  - {class: Company, code: sk-inc,       name: SK Inc.,             country: kr, note: 지주회사 (ER 함정용)}
+  - {class: Company, code: samsung-elec, name: Samsung Electronics, country: kr}
+  - {class: Company, code: samsung-sdi,  name: Samsung SDI,         country: kr, note: 배터리 회사 (ER 함정용)}
+  - {class: Company, code: micron,       name: Micron,              country: us}
 
-  # ---- equipment: EQ-017 exists in BOTH fabs (different serials) -> the ER trap
-  - {class: Equipment, fab: FAB-A, code: EQ-017, name: FAB-A/EQ-017, serial: SN-A017, model: ETCH-X300, state: unscheduled_down}
-  - {class: Equipment, fab: FAB-B, code: EQ-017, name: FAB-B/EQ-017, serial: SN-B017, model: ETCH-X300, state: productive}
-  - {class: Equipment, fab: FAB-A, code: EQ-018, name: FAB-A/EQ-018, serial: SN-A018, model: ETCH-X300, state: productive, prompt: false}
-  - {class: Equipment, fab: FAB-A, code: EQ-022, name: FAB-A/EQ-022, serial: SN-A022, model: CVD-P200, state: productive, prompt: false}
-  - {class: Equipment, fab: FAB-B, code: EQ-031, name: FAB-B/EQ-031, serial: SN-B031, model: CMP-M300, state: scheduled_down, prompt: false}
+  - {class: Product, code: nvidia-b200,   name: Blackwell B200,          status: announced}
+  - {class: Product, code: nvidia-h200,   name: H200}
+  - {class: Product, code: nvidia-h20,    name: H20,                     note: 중국 시장용 (ER 함정용 - H200과 이름이 비슷)}
+  - {class: Product, code: skh-hbm3e-8h,  name: SK hynix HBM3E 8단,       status: sampling}
+  - {class: Product, code: mu-hbm3e-8h,   name: Micron HBM3E 24GB 8단,    status: mass_production}
+  - {class: Product, code: sec-hbm3e-12h, name: Samsung HBM3E 12H 36GB,  status: sampling}
 
-  # ---- part types (typical chamber hardware)
-  - {class: PartType, code: PT-V42, name: PT-V42 압력센서 (정전용량형 진공 게이지)}
-  - {class: PartType, code: TV-08, name: TV-08 스로틀 밸브}
-  - {class: PartType, code: RF-GEN-13, name: RF-GEN-13 RF 제너레이터}
-  - {class: PartType, code: ESC-300, name: ESC-300 정전척}
-  - {class: PartType, code: FR-ETCH, name: FR-ETCH 포커스 링, prompt: false}
-  - {class: PartType, code: TMP-21, name: TMP-21 터보분자펌프, prompt: false}
-  - {class: PartType, code: MFC-07, name: MFC-07 질량유량제어기, prompt: false}
-  - {class: PartType, code: PAD-CMP, name: PAD-CMP 연마 패드, prompt: false}
+  - {class: Technology, code: hbm3e,    name: HBM3E}
+  - {class: Technology, code: hbm4,     name: HBM4}
+  - {class: Technology, code: tsmc-4np, name: TSMC 4NP}
+  - {class: Technology, code: cowos-l,  name: CoWoS-L}
+  - {class: Technology, code: cowos-s,  name: CoWoS-S}
 
-  # ---- failure modes
-  - {class: FailureMode, code: FM-PT-DRIFT, name: PT-V42 열화 (압력 측정 드리프트)}
-  - {class: FailureMode, code: FM-TV-STICK, name: 스로틀 밸브 고착}
-  - {class: FailureMode, code: FM-RF-REFL, name: RF 반사전력 증가}
-  - {class: FailureMode, code: FM-ESC-LEAK, name: 정전척 헬륨 누설, prompt: false}
-  - {class: FailureMode, code: FM-TMP-VIB, name: 터보펌프 진동, prompt: false}
+  - {class: Policy, code: us-export-ai-chips, name: 미국 첨단 AI 칩 수출 통제, issued_by: us, targets: cn}
 
-  # ---- alarms (equipment alarm codes, fictional numbering)
-  - {class: Alarm, code: ALM-312, name: ALM-312 챔버 압력 이탈}
-  - {class: Alarm, code: ALM-205, name: ALM-205 RF 반사전력 높음, prompt: false}
-  - {class: Alarm, code: ALM-118, name: ALM-118 He 후면 압력 이상, prompt: false}
+  # ---- baseline graph only (prompt: false) — wider industry context from the scraped articles
+  - {class: Country, code: cn, name: 중국, prompt: false}
 
-  # ---- maintenance work already in the graph (synced from CMMS up to 2026-03-01)
-  - {class: MaintenanceWork, code: WO-1035, name: WO-1035 MFC 교체 (CM), status: completed, work_type: CM, completed_at: "2026-01-14 16:40", prompt: false}
-  - {class: MaintenanceWork, code: WO-1036, name: WO-1036 연마 패드 교체 (PM), status: completed, work_type: PM, completed_at: "2026-01-19 11:05", prompt: false}
-  - {class: MaintenanceWork, code: WO-1037, name: WO-1037 포커스 링 교체 (PM), status: completed, work_type: PM, completed_at: "2026-01-27 09:30", prompt: false}
-  - {class: MaintenanceWork, code: WO-1038, name: WO-1038 RF 제너레이터 교체 (CM), status: completed, work_type: CM, completed_at: "2026-02-12 18:15"}
-  - {class: MaintenanceWork, code: WO-1040, name: WO-1040 스로틀 밸브 세정 (PM), status: completed, work_type: PM, completed_at: "2026-01-20 15:00"}
-  - {class: MaintenanceWork, code: WO-1041, name: WO-1041 PT-V42 교정 (PM), status: completed, work_type: PM, completed_at: "2026-02-10 14:30"}
+  - {class: Company, code: amd,   name: AMD,   country: us, prompt: false}
+  - {class: Company, code: intel, name: Intel, country: us, prompt: false}
+
+  - {class: Product, code: nvidia-h100,  name: H100,          prompt: false}
+  - {class: Product, code: nvidia-a100,  name: A100,          prompt: false}
+  - {class: Product, code: nvidia-a800,  name: A800,          prompt: false, note: 중국 시장용}
+  - {class: Product, code: nvidia-h800,  name: H800,          prompt: false, note: 중국 시장용}
+  - {class: Product, code: nvidia-gb200, name: GB200 NVL72,   prompt: false}
+  - {class: Product, code: nvidia-grace, name: Grace CPU,     prompt: false}
+  - {class: Product, code: nvidia-rubin, name: Rubin,         prompt: false, status: announced}
+  - {class: Product, code: skh-hbm3,     name: SK hynix HBM3, prompt: false, status: mass_production}
+  - {class: Product, code: skh-hbm4-12h, name: SK hynix HBM4 12단, prompt: false, status: sampling}
+  - {class: Product, code: amd-mi300x,   name: Instinct MI300X, prompt: false}
+  - {class: Product, code: amd-mi300a,   name: Instinct MI300A, prompt: false}
+
+  - {class: Technology, code: hbm3,    name: HBM3,     prompt: false}
+  - {class: Technology, code: tsmc-4n, name: TSMC 4N,  prompt: false}
+
+  - {class: Policy, code: us-chips-act, name: 미국 CHIPS 법 보조금, issued_by: us, prompt: false}

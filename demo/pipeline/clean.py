@@ -1,17 +1,16 @@
 """Step 2 · 정제: remove noise, normalize terms, and find known mentions.
 
-cmms : CSV export -> one chunk per row; duplicate rows dropped, date formats unified.
 mail : drop quoted thread, signature, disclaimer, closing lines.
-stt  : map speakers, drop fillers / unclear segments, restore Hangul-spelled codes and units.
-docs : relative dates (3/6, 금요일, 지난달) -> absolute, units (mTorr -> Torr), lexicon scan
-       (rule-based mention detection), "near misses" (similar but different codes, e.g. EQ-017 vs EQ-071).
+stt  : map speakers, drop fillers / unclear segments, restore Hangul-spelled acronyms.
+both : relative dates -> absolute, lexicon scan (rule-based mention detection),
+       "near misses" (similar but different codes, e.g. H20 vs H200).
 Every removal keeps a reason so the UI can show exactly what was dropped and why.
 """
 import datetime as dt
 import difflib
 import re
 
-from .common import config, lexicon, phonetic, read_artifact, write_artifact, entities, entity_uid, ontology
+from .common import config, lexicon, phonetic, read_artifact, write_artifact
 
 
 # ---------------------------------------------------------------- lexicon index
@@ -24,20 +23,6 @@ def alias_index():
                 idx.setdefault(a.casefold(), []).append({
                     "alias": a, "ref": t["ref"], "pref": t["pref"], "kind": kind,
                     "ambiguous": bool(t.get("ambiguous")), "context": t.get("context", [])})
-    # master entities: their name, and their code when the code alone is the key
-    # (Equipment codes are NOT added: EQ-017 exists in both fabs, only "fab + code" identifies one)
-    prefs = {}
-    for t in lexicon()["terms"]:
-        prefs.setdefault(t["ref"], t["pref"])
-    classes = ontology()["classes"]
-    for e in entities():
-        ref = entity_uid(e)
-        names = [e["name"]] + ([e["code"]] if classes[e["class"]]["key"] == ["code"] else [])
-        for a in names:
-            if not any(x["ref"] == ref for x in idx.get(a.casefold(), [])):
-                idx.setdefault(a.casefold(), []).append({
-                    "alias": a, "ref": ref, "pref": prefs.get(ref, a), "kind": "master",
-                    "ambiguous": False, "context": []})
     # same alias listed on several terms -> ambiguous even if not flagged
     for k, v in idx.items():
         refs = {x["ref"] for x in v}
@@ -80,7 +65,7 @@ def scan_mentions(text, chunk_id, idx):
 
 
 def is_code(s):
-    """Short part / equipment codes like PT-V42, EQ-017, TV-08: ASCII letters + digits, no spaces."""
+    """Short product/part codes like H20, B200, HBM3E: ASCII letters + digits, no spaces."""
     return bool(re.fullmatch(r"[A-Za-z]+[A-Za-z0-9\-]*\d[A-Za-z0-9\-]*", s))
 
 
@@ -122,15 +107,11 @@ def restore_phonetic(text, chunk_id, norms):
             norms.append({"chunk_id": chunk_id, "surface": f"{rule['prev']} {rule['say']}",
                           "result": rule["prev"] + rule["write"], "method": "발음 복원 (앞 단어 조건)",
                           "spoken": f"{spoken_prev} {rule['say']}"})
-    # "PT-V42 는" -> "PT-V42는": STT leaves a space before Korean particles
+    # "HBM3E 는" -> "HBM3E는": STT leaves a space before Korean particles
     text = re.sub(r"(\S) (는|를|을|에|가|은|도|의|와|과)(?=\s|$)", r"\1\2", text)
     return text
 
 
-WEEKDAYS = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-
-
-# CUSTOMIZE: date expressions your documents use. Results are shown, never silently replaced in the text.
 def resolve_dates(text, chunk_id, doc_date, norms):
     if not doc_date:
         return
@@ -139,33 +120,14 @@ def resolve_dates(text, chunk_id, doc_date, norms):
         if word in text:
             norms.append({"chunk_id": chunk_id, "surface": word, "result": str(base + dt.timedelta(days=delta)),
                           "method": "규칙 · 상대 날짜", "note": f"문서 작성일 {base} 기준"})
-    for m in re.finditer(r"(?<![\d/])(\d{1,2})/(\d{1,2})(?![\d/])", text):
-        mon, day = int(m.group(1)), int(m.group(2))
-        if 1 <= mon <= 12 and 1 <= day <= 31:
-            year = base.year if mon <= base.month else base.year - 1
-            norms.append({"chunk_id": chunk_id, "surface": m.group(0), "result": f"{year}-{mon:02d}-{day:02d}",
-                          "method": "규칙 · 월/일 → 날짜", "note": f"문서 작성일 {base} 기준 연도"})
-    for k, w in enumerate(WEEKDAYS):
-        if w in text:
-            d = base + dt.timedelta(days=(k - base.weekday()) % 7)
-            norms.append({"chunk_id": chunk_id, "surface": w, "result": str(d),
-                          "method": "규칙 · 요일 → 날짜", "note": f"작성일 {base}({WEEKDAYS[base.weekday()]}) 이후 첫 {w}"})
-    if "지난달" in text:
-        prev = (base.replace(day=1) - dt.timedelta(days=1))
-        norms.append({"chunk_id": chunk_id, "surface": "지난달", "result": f"{prev.year}-{prev.month:02d}",
-                      "method": "규칙 · 상대 기간", "note": f"작성일 {base} 기준 · 일자는 모름"})
-    if "이번 주" in text:
-        mon = base - dt.timedelta(days=base.weekday())
-        norms.append({"chunk_id": chunk_id, "surface": "이번 주", "result": f"{mon} ~ {mon + dt.timedelta(days=6)}",
-                      "method": "규칙 · 상대 기간", "note": f"작성일 {base} 기준"})
-
-
-def resolve_units(text, chunk_id, norms):
-    """Pressure to the base unit (Torr); the original value stays in the text."""
-    for m in re.finditer(r"(\d+(?:\.\d+)?)\s*mTorr", text):
-        v = float(m.group(1)) / 1000
-        norms.append({"chunk_id": chunk_id, "surface": m.group(0), "result": f"{v:g} Torr",
-                      "method": "규칙 · 단위 환산", "note": "기준 단위 Torr · 원래 값 보존"})
+    for m in re.finditer(r"(\d{1,2})월", text):
+        mon = int(m.group(1))
+        year = base.year if mon <= base.month else base.year - 1
+        norms.append({"chunk_id": chunk_id, "surface": m.group(0), "result": f"{year}-{mon:02d}",
+                      "method": "규칙 · 월 → 연월", "note": f"작성일 {base} 이전의 가장 가까운 {mon}월"})
+    for m in re.finditer(r"(상반기|하반기|연내)", text):
+        norms.append({"chunk_id": chunk_id, "surface": m.group(0), "result": f"{base.year} {m.group(0)}",
+                      "method": "규칙 · 기간", "note": "연도는 작성일 기준 추정 — 확정 아님"})
 
 
 def _as_date(v):
@@ -251,70 +213,16 @@ def clean_stt(meta, body, cfg):
     return lines, chunks
 
 
-# ---------------------------------------------------------------- cmms (structured export)
-def _norm_dt(v, formats):
-    v = (v or "").strip()
-    if not v:
-        return None, None
-    for f in formats:
-        try:
-            out = dt.datetime.strptime(v, f).strftime("%Y-%m-%d %H:%M")
-            return out, (None if f == formats[0] else f)
-        except ValueError:
-            continue
-    return v, "형식 모름"
-
-
-# CUSTOMIZE: column names come from your CMMS export (see config cmms_mapping).
-def clean_cmms(meta, body, cfg):
-    import csv
-    import io
-    rows = list(csv.reader(io.StringIO(body)))
-    header, lines, chunks, seen, norms_dt = rows[0], [], [], set(), []
-    lines.append({"n": 1, "text": ",".join(header), "status": "header", "reason": "열 이름"})
-    for n, cells in enumerate(rows[1:], 2):
-        text = ",".join(cells)
-        if not any(c.strip() for c in cells):
-            lines.append({"n": n, "text": text, "status": "blank", "reason": ""})
-            continue
-        row = dict(zip(header, cells))
-        key = tuple(row.get(k) for k in cfg["key_columns"])
-        if key in seen:
-            lines.append({"n": n, "text": text, "status": "removed",
-                          "reason": f"중복 행 ({' · '.join(cfg['key_columns'])} 같음) → 한 번만 처리"})
-            continue
-        seen.add(key)
-        for col in ("started_at", "completed_at", "updated_at"):
-            v, how = _norm_dt(row.get(col), cfg["datetime_formats"])
-            if how and row.get(col):
-                norms_dt.append({"line": n, "surface": row[col], "result": v, "method": "규칙 · 날짜 형식",
-                                 "note": f"{col} · {how} → YYYY-MM-DD HH:MM"})
-            row[col] = v
-        lines.append({"n": n, "text": text, "status": "keep", "reason": ""})
-        parts = [row["wo_id"], f"{row['fab']} {row['eq_code']}", f"serial {row['serial']}", row["work_type"],
-                 row["part"], row["status"]]
-        if row.get("started_at"):
-            parts.append(f"시작 {row['started_at']}")
-        if row.get("completed_at"):
-            parts.append(f"완료 {row['completed_at']}")
-        parts.append(row.get("description") or "")
-        chunks.append({"text_clean": " · ".join(p for p in parts if p), "line": n, "row": row})
-    return lines, chunks, norms_dt
-
-
 # ---------------------------------------------------------------- step
 def run(input_id):
     col = read_artifact(input_id, "collect")
     meta, body = col["meta"], col["body"]
     kind = meta.get("kind")
     cfg = config()["cleaning"]
-    row_norms = []
     if kind == "mail":
         lines, chunks = clean_mail(meta, body, cfg["mail"])
     elif kind == "meeting_stt":
         lines, chunks = clean_stt(meta, body, cfg["stt"])
-    elif kind == "cmms_csv":
-        lines, chunks, row_norms = clean_cmms(meta, body, cfg["cmms"])
     else:
         raise ValueError(f"unknown kind: {kind}")
     doc_id = meta["doc_id"]
@@ -325,12 +233,7 @@ def run(input_id):
         c["chunk_id"] = f"{doc_id}#c{i:02d}"
         text = restore_phonetic(c["text_clean"], c["chunk_id"], norms) if kind == "meeting_stt" else c["text_clean"]
         c["text"] = text
-        for rn in row_norms:
-            if rn["line"] == c["line"]:
-                norms.append({k: v for k, v in rn.items() if k != "line"} | {"chunk_id": c["chunk_id"]})
-        if kind != "cmms_csv":
-            resolve_dates(text, c["chunk_id"], doc_date, norms)
-            resolve_units(text, c["chunk_id"], norms)
+        resolve_dates(text, c["chunk_id"], doc_date, norms)
         ms = scan_mentions(text, c["chunk_id"], idx)
         for m in ms:
             if not m["ambiguous"] and m["surface"] == m["pref"]:

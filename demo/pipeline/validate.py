@@ -1,21 +1,19 @@
 """Step 5 · 검증: decide what each candidate becomes.
 
-Checks per fact: ontology schema · entity link · evidence really in the text · hedging (추정 표현) ·
-system of record (기준 시스템: CMMS, alarm log) · reference documents.
+Checks per fact: ontology schema · entity link · evidence really in the text ·
+supporting article in the news corpus (원천 대조) · certainty.
 Outcomes:
   approve            -> loaded as a confirmed fact
   hold               -> ReviewItem (needs a person or a source)
-  reject             -> dropped, reason shown (malformed, or "추정" written as a confirmed cause)
+  reject             -> dropped, reason shown (malformed)
   ontology_candidate -> relation / term not in ontology v1 (proposal for v1.1)
   question           -> unresolved reference, goes to the question queue
-LLM output is never trusted on its own: a suspected claim is never promoted to confirmed, and a document
-never overwrites the system of record - a mismatch is kept for review.
+LLM output is never trusted on its own: a suspected claim is never promoted to confirmed.
 """
 import re
 
-from .common import ontology, reference, config, class_of, read_artifact, write_artifact
+from .common import ontology, corpus, config, class_of, read_artifact, write_artifact
 from .clean import alias_index
-from . import official
 
 
 def _toks(s):
@@ -27,57 +25,45 @@ def _same_name(a, b):
     return bool(ta and tb) and len(ta & tb) / len(ta | tb) >= 0.6
 
 
-def reference_support(p, s_uid, o_uid, value=None, any_predicate=False):
-    """Reference documents whose facts state the same thing (and ones that state it reversed)."""
+def _match_side(corpus_side, uid, name):
+    if isinstance(corpus_side, str):
+        return corpus_side == uid
+    if isinstance(corpus_side, dict):
+        n = corpus_side.get("new") or corpus_side.get("name")
+        return bool(n) and _same_name(n, name)
+    return False
+
+
+# CUSTOMIZE: the "source of truth" here is the news corpus. For another domain, check against
+# the official system instead (CMMS / ERP table, contract register, ...).
+def _same_key(p, a_props, b_props):
+    """Key properties (ontology `key`, e.g. SUPPLIES.item) must agree when both sides give them."""
+    for k in ontology()["relations"].get(p, {}).get("key", []):
+        a, b = (a_props or {}).get(k), (b_props or {}).get(k)
+        if a and b and str(a).casefold() != str(b).casefold():
+            return False
+    return True
+
+
+def supporting_articles(p, s_uid, s_name, o_uid, o_name, value=None, any_predicate=False, props=None):
     hits, reverse = [], []
-    for a in reference():
+    for a in corpus():
         for f in a["facts"]:
             if not any_predicate and f["p"] != p:
                 continue
-            if "value" in f and not any_predicate:
-                if f["s"] == s_uid and f.get("value") == value:
+            if not any_predicate and not _same_key(p, props, f.get("props")):
+                continue
+            s_ok = _match_side(f.get("s"), s_uid, s_name)
+            if p == "PRODUCT_STATUS" and not any_predicate:
+                if s_ok and f.get("value") == value:
                     hits.append(a)
                 continue
-            if f.get("s") == s_uid and f.get("o") == o_uid:
+            o_side = f.get("o") if "o" in f else f.get("o_new")
+            if s_ok and _match_side(o_side, o_uid, o_name):
                 hits.append(a)
-            elif f.get("s") == o_uid and f.get("o") == s_uid:
+            elif _match_side(f.get("s"), o_uid, o_name) and _match_side(o_side, s_uid, s_name):
                 reverse.append(a)
     return hits, reverse
-
-
-# CUSTOMIZE: the systems of record and which fields they own.
-def official_check(f, sl, ol, input_kind):
-    """None when no system of record owns this fact; else (ok, detail)."""
-    o = ontology()
-    p = f.get("predicate")
-    spec = o["relations"].get(p) or o["property_facts"].get(p) or {}
-    system = spec.get("official")
-    if not system:
-        return None
-    if input_kind == "cmms_csv" and system == "cmms":
-        return True, f"CMMS 원본 행 {f.get('row_line')} (기준 시스템 자체)"
-    if system == "cmms":
-        w = sl and sl.get("official") or (sl and sl.get("uid") and official.works().get(sl["uid"].split(":", 1)[1]))
-        if not w:
-            return False, "CMMS에서 대응하는 작업을 찾지 못함"
-        problems = [r.split(": ", 1)[-1] for r in (sl.get("reasons") or []) if "불일치" in r]
-        if p == "ON_EQUIPMENT" and ol and ol.get("uid") and w.get("equipment") != ol["uid"]:
-            problems.append(f"설비 다름 (CMMS {w.get('equipment')})")
-        if p == "USED_PART_TYPE" and ol and ol.get("uid") and w.get("part") != ol["uid"]:
-            problems.append(f"부품 다름 (CMMS {w.get('part')})")
-        if p == "WORK_STATUS" and f.get("value") != w.get("status"):
-            problems.append(f"상태 다름: 문서 {f.get('value')} · CMMS {w.get('status')}")
-        if problems:
-            return False, f"CMMS {w['code']}와 불일치 — " + " · ".join(problems)
-        return True, f"CMMS {w['code']}와 일치 ({w['source']})"
-    if system == "alarm_log":
-        s, ob = sl and sl.get("uid"), ol and ol.get("uid")
-        for doc_id, af in official.alarm_facts():
-            if af["s"] == s and af["o"] == ob:
-                pr = af.get("props", {})
-                return True, f"알람 로그 {doc_id}: {pr.get('count', '?')}회 · 마지막 {pr.get('last_at', '-')}"
-        return False, "알람 로그에 해당 설비 · 알람 기록 없음"
-    return None
 
 
 def check_fact(f, links):
@@ -88,10 +74,8 @@ def check_fact(f, links):
     ol = links.get(f.get("object_link")) if f.get("object_link") else None
     checks = []
     p = f.get("predicate")
-
-    def cls(l):
-        return (l.get("class_hint") if l and l["decision"] == "new" else class_of(l and l.get("uid"))) if l else None
-    s_cls, o_cls = cls(sl), cls(ol)
+    s_cls = "Product" if sl and sl["decision"] == "new" else class_of(sl and sl.get("uid"))
+    o_cls = ("Product" if ol and ol["decision"] == "new" else class_of(ol and ol.get("uid"))) if ol else None
     # 1. schema
     if p in rels:
         r = rels[p]
@@ -111,107 +95,88 @@ def check_fact(f, links):
                             for l in (sl, ol) if l)
     checks.append({"name": "개체 연결", "ok": True if ent_ok else (None if "nil" not in decisions else False),
                    "detail": ent_detail})
-    return checks, sl, ol
+    # 3. evidence present in the chunk text
+    return checks, sl, ol, s_cls, o_cls
 
 
 def run(input_id):
     cl = read_artifact(input_id, "clean")
     rs = read_artifact(input_id, "resolve")
     vcfg = config()["validate"]
-    rels = ontology()["relations"]
     links = {l["link_id"]: l for l in rs["links"]}
     chunks = {c["chunk_id"]: c for c in cl["chunks"]}
-    kind = cl["kind"]
+    baseline_ids = {a["id"] for a in corpus() if a.get("baseline")}
     results = []
     for f in rs["facts"]:
-        checks, sl, ol = check_fact(f, links)
-        p = f.get("predicate")
+        checks, sl, ol, s_cls, o_cls = check_fact(f, links)
         ev = (f.get("evidence") or "").strip()
         text = chunks.get(f.get("chunk_id"), {}).get("text", "")
         ev_ok = bool(ev) and (ev in text or ev.rstrip(".") in text)
         checks.append({"name": "근거 문장", "ok": ev_ok,
                        "detail": "원문에서 찾음" if ev_ok else "근거 구절이 조각 텍스트에 없음"})
-        # hedging: "추정 · 예정" in the evidence can't be a confirmed statement
+        hits, reverse = supporting_articles(f.get("predicate"), sl and sl.get("uid"), sl and sl.get("name"),
+                                            ol and ol.get("uid"), ol and ol.get("name"), f.get("value"),
+                                            props=f.get("props"))
+        new_hits = [a for a in hits if a["id"] not in baseline_ids]
+        old_hits = [a for a in hits if a["id"] in baseline_ids]
+        src_detail = (", ".join(f"{a['id']} {a['publisher']} {a['date']}" for a in hits) if hits
+                      else "뒷받침하는 기사 없음")
+        if reverse and not hits:
+            src_detail += f" · 반대 방향 사실은 있음({', '.join(a['id'] for a in reverse)}) → 방향 오류 의심"
+        checks.append({"name": "원천 대조", "ok": bool(hits), "detail": src_detail})
         cert = f.get("certainty")
-        hedge = [w for w in vcfg["hedge_words"] if w in ev]
-        if cert == "confirmed" and hedge:
-            cert_ok, cert_detail = False, f"근거에 '{'·'.join(hedge)}' — 확정으로 볼 수 없음"
-        else:
-            cert_ok = cert == "confirmed"
-            cert_detail = "확정 표현" if cert_ok else "추정 표현 — 확정으로 올리지 않음"
-        checks.append({"name": "확신도", "ok": cert_ok, "detail": cert_detail})
-        # system of record
-        oc = official_check(f, sl, ol, kind)
-        if oc is not None:
-            checks.append({"name": "기준 시스템", "ok": oc[0], "detail": oc[1]})
-        # reference documents (already in the baseline KG?)
-        hits, reverse = reference_support(p, sl and sl.get("uid"), ol and ol.get("uid"), f.get("value"))
-        if hits or reverse or oc is None:
-            src_detail = (", ".join(f"{a['id']} ({a['system']})" for a in hits) if hits else "뒷받침하는 문서 없음")
-            if reverse and not hits:
-                src_detail += f" · 반대 방향 사실은 있음({', '.join(a['id'] for a in reverse)}) → 방향 오류 의심"
-            checks.append({"name": "문서 대조", "ok": True if hits else None, "detail": src_detail})
-        risk = "high" if p in vcfg["high_risk"] else "normal"
+        checks.append({"name": "확신도", "ok": cert == "confirmed",
+                       "detail": "확정 표현" if cert == "confirmed" else "추정 표현 — 확정으로 올리지 않음"})
+        risk = "high" if f.get("predicate") in vcfg["high_risk"] else "normal"
         c = {x["name"]: x for x in checks}
         if c["스키마"]["ok"] is False or not ev_ok:
             decision, reason = "reject", "형식 오류" if c["스키마"]["ok"] is False else "근거 문장 불일치"
-        elif p == "CONFIRMED_CAUSE" and not cert_ok:
-            decision, reason = "reject", "근거는 추정 — 확정 원인으로 올릴 수 없음 (SUSPECTED_CAUSE 후보로 다시)"
         elif c["개체 연결"]["ok"] is False:
-            decision, reason = "hold", "개체를 찾지 못함 (참조 무결성)"
-        elif oc is not None and oc[0] is False:
-            decision, reason = "hold", "기준 시스템과 불일치 — 덮어쓰지 않고 기록"
-        elif not cert_ok:
-            decision = "hold"
-            reason = (f"근거에 '{'·'.join(hedge)}' — 확정된 사실로 볼 수 없음" if cert == "confirmed"
-                      else "추정 — 사람 확인 필요") + (" (고위험)" if risk == "high" else "")
+            decision, reason = "hold", "개체를 찾지 못함 (미연결)"
+        elif cert != "confirmed":
+            decision, reason = "hold", "추정 — 확인 필요"
         elif c["개체 연결"]["ok"] is None:
-            decision, reason = "hold", "개체 연결 검토 필요" + (" (참조 무결성 의심)" if any(
-                "참조 무결성" in r for l in (sl, ol) if l for r in l.get("reasons", [])) else "")
-        elif oc is not None:
-            decision, reason = "approve", "이미 기준 KG에 있음" if hits else "기준 시스템과 일치"
-        elif hits:
-            decision, reason = "approve", "이미 기준 KG에 있음"
-        elif reverse:
-            decision, reason = "hold", "방향 오류 의심"
-        elif risk == "high" and not rels.get(p, {}).get("hedged"):
-            decision, reason = "hold", "근거 문서 없음 (고위험)"
+            decision, reason = "hold", "개체 연결 검토 필요"
+        elif not hits:
+            decision, reason = "hold", ("방향 오류 의심" if reverse else "근거 기사 없음") + (" (고위험)" if risk == "high" else "")
         else:
-            decision, reason = "approve", "원문 근거로 승인"
+            decision, reason = "approve", "이미 기준 KG에 있음" if old_hits and not new_hits else "기사로 확인됨"
         results.append({"fact_id": f["fact_id"], "fact": f, "checks": checks, "decision": decision,
-                        "reason": reason, "risk": risk,
-                        "certainty": "suspected" if (cert == "confirmed" and not cert_ok) else cert,
+                        "reason": reason, "risk": risk, "certainty": cert,
                         "subject": sl, "object": ol, "sources": [a["id"] for a in hits]})
-    # structured rows are one unit: if one value of a row is held, the whole row waits
-    for line in {r["fact"].get("row_line") for r in results if r["fact"].get("method") == "rule"}:
-        row = [r for r in results if r["fact"].get("row_line") == line]
-        held = [r for r in row if r["decision"] != "approve"]
-        if held:
-            for r in row:
-                if r["decision"] == "approve":
-                    r["decision"], r["reason"] = "hold", f"같은 행의 {held[0]['fact']['predicate']} 보류 → 행 단위로 대기"
     # out-of-ontology relations -> ontology candidates
     candidates = []
     for oo in rs["out_of_ontology"]:
         subs = [links[i] for i in oo["subject_links"]]
         ob = links[oo["object_link"]]
+        sup = []
+        if len(subs) == 2 and all(s.get("uid") for s in subs):
+            sup, _ = supporting_articles(None, subs[0]["uid"], subs[0]["name"], subs[1]["uid"], subs[1]["name"],
+                                         any_predicate=True)
         candidates.append({"kind": "relation", "id": oo["oo_id"], "name": oo.get("suggested_relation"),
                            "phrase": oo.get("relation_phrase"), "chunk_id": oo.get("chunk_id"),
                            "evidence": oo.get("evidence"),
-                           "between": [x for x in [s.get("name") or s["surface"] for s in subs]
-                                       + [ob.get("name") or ob["surface"]] if x],
-                           "between_uids": [s.get("uid") for s in subs] + [ob.get("uid")],
+                           "between": [s.get("name") or s["surface"] for s in subs],
+                           "between_uids": [s.get("uid") for s in subs],
                            "from_class": class_of(subs[0].get("uid")) if subs else None,
-                           "to_class": class_of(ob.get("uid")) or "(새 개념)",
-                           "topic": ob["surface"] or "(새 개념)", "sources": []})
+                           "to_class": class_of(subs[-1].get("uid")) if subs else None,
+                           "topic": ob["surface"], "sources": [a["id"] for a in sup],
+                           "corpus_names": sorted({f["p"] for a in sup for f in a["facts"]})})
     # unknown terms -> term candidates (only if really unknown)
     terms = []
     for t in rs["unknown_terms"]:
         l = links[t["link"]]
         if l["decision"] == "same":
             terms.append({**t, "decision": "drop", "reason": f"사전에 있음 → {l['name']}"})
+        elif l["decision"] == "new":
+            terms.append({**t, "decision": "new_entity", "reason": f"새 개체 후보로 처리 ({l['name']})"})
         else:
             terms.append({**t, "decision": "term_candidate", "reason": "사전 · 마스터에 없음 → 용어 후보"})
+    for oo in candidates:  # the object of an out-of-ontology relation is often a new term too
+        if oo["topic"] and not any(_same_name(oo["topic"], t.get("term")) for t in terms):
+            terms.append({"term": oo["topic"], "chunk_id": oo["chunk_id"], "guess_class": "Technology",
+                          "evidence": oo["evidence"], "decision": "term_candidate",
+                          "reason": "관계 후보의 대상 · 사전에 없음"})
     # unresolved references -> question queue (unless the link step resolved them)
     questions = []
     for q in rs["unresolved_references"]:

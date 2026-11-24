@@ -7,7 +7,7 @@
 Held items, questions and ontology proposals are stored as ReviewItem / OntologyCandidate
 nodes so they stay visible next to the facts they are about.
 """
-from .common import cypher, read_artifact, write_artifact, uid, class_of, ontology
+from .common import cypher, read_artifact, write_artifact, uid, class_of
 from . import graph
 
 
@@ -23,10 +23,8 @@ def _rel_state(s, p, o, props=None):
     return rows[0]["src"] if rows else None
 
 
-def _prop(u, pf):
-    """Current value + sources of a property fact (e.g. WORK_STATUS -> MaintenanceWork.status)."""
-    prop = graph.ident(pf["property"])
-    rows = cypher(f"MATCH (n:{graph.ident(pf['class'])} {{uid:$u}}) RETURN n.{prop} AS s, n.{prop}_sources AS src", u=u)
+def _status(u):
+    rows = cypher("MATCH (p:Product {uid:$u}) RETURN p.status AS s, p.status_sources AS src", u=u)
     return rows[0] if rows else None
 
 
@@ -62,7 +60,6 @@ def build_plan(input_id):
                 op("mention", f"{cu} → {m['uid']}", m["surface"], {"chunk": cu, "entity": m["uid"]})
 
     created_new = set()
-    pfs = ontology()["property_facts"]
     for r in va["results"]:
         f, sl, ol = r["fact"], r["subject"], r["object"]
         src = [doc_id] + r["sources"]
@@ -71,34 +68,29 @@ def build_plan(input_id):
             for l in (sl, ol):
                 if l and l["decision"] == "new" and l["uid"] not in created_new and not _exists_node(l["uid"]):
                     created_new.add(l["uid"])
-                    cls = l.get("class_hint") or class_of(l["uid"])
-                    np = dict(f.get("node_props") or {})
-                    label = f"{l['name']} {np.get('description', '')}".strip()
-                    op("create_node", l["uid"], f"새 {cls} {l['name']}", {"cls": cls, "props": {
-                        "uid": l["uid"], "code": l["name"], "name": label, **np}})
-                    if f.get("method") != "rule":   # rows from the system of record need no extra review
-                        op("review", f"{doc_id}:{l['uid']}", f"새 개체 '{l['name']}' — 마스터 등록 확인",
-                           {"rid": f"{doc_id}:{l['uid']}", "kind": "new_entity",
-                            "summary": f"새 개체 '{l['name']}' 마스터 등록 확인",
-                            "reason": "마스터에 없던 개체", "about": [l["uid"]], "chunk": chunk})
-            if f["predicate"] in pfs:
-                pf = pfs[f["predicate"]]
-                cur = None if sl["uid"] in created_new else _prop(sl["uid"], pf)
-                name = pf["property"]
+                    op("create_node", l["uid"], f"새 제품 {l['name']}", {"cls": "Product", "props": {
+                        "uid": l["uid"], "code": l["uid"].split(":", 1)[1], "name": l["name"],
+                        "status_sources": [], "needs_review": True}})
+                    op("review", f"{doc_id}:{l['uid']}", f"새 제품 '{l['name']}' — 마스터 등록·개발사 연결 확인",
+                       {"rid": f"{doc_id}:{l['uid']}", "kind": "new_entity",
+                        "summary": f"새 제품 '{l['name']}' 마스터 등록·개발사 연결 확인",
+                        "reason": "마스터에 없던 제품", "about": [l["uid"]], "chunk": chunk})
+            if f["predicate"] == "PRODUCT_STATUS":
+                cur = None if sl["uid"] in created_new else _status(sl["uid"])
                 if cur and cur["s"] == f["value"] and set(src) <= set(cur["src"] or []):
-                    op("noop", sl["uid"], f"{name} 이미 {f['value']}", {}, False)
+                    op("noop", sl["uid"], f"status 이미 {f['value']}", {}, False)
                 elif cur and cur["s"] == f["value"]:
-                    op("add_source", sl["uid"], f"{name} {f['value']} 근거 추가",
-                       {"uid": sl["uid"], "pf": f["predicate"], "sources": src, "value": f["value"], "change": False})
+                    op("add_source", sl["uid"], f"status {f['value']} 근거 추가", {"uid": sl["uid"], "sources": src,
+                                                                                  "value": f["value"], "change_status": False})
                 else:
-                    op("set_status", sl["uid"], f"{name} {cur['s'] if cur and cur['s'] else '-'} → {f['value']}",
-                       {"uid": sl["uid"], "pf": f["predicate"], "value": f["value"], "prev": cur["s"] if cur else None,
-                        "sources": src, "evidence": f["chunk_id"], "change": bool(cur and cur["s"])})
+                    op("set_status", sl["uid"], f"status {cur['s'] if cur else '-'} → {f['value']}",
+                       {"uid": sl["uid"], "value": f["value"], "prev": cur["s"] if cur else None,
+                        "sources": src, "evidence": f["chunk_id"], "change_status": bool(cur)})
             else:
                 state = _rel_state(sl["uid"], f["predicate"], ol["uid"], f.get("props")) if sl["uid"] not in created_new else None
                 label = f"{sl['name']} -[{f['predicate']}]-> {ol['name']}"
                 data = {"s": sl["uid"], "p": f["predicate"], "o": ol["uid"],
-                        "props": {"certainty": r["certainty"], **(f.get("props") or {})},
+                        "props": {"certainty": "confirmed", **(f.get("props") or {})},
                         "sources": src, "evidence": [f["chunk_id"]]}
                 if state is None:
                     op("create_rel", label, "새 관계", data)
@@ -109,12 +101,8 @@ def build_plan(input_id):
         elif r["decision"] == "hold":
             rid = f"{doc_id}:{r['fact_id']}"
             about = [l["uid"] for l in (sl, ol) if l and l.get("uid") and l["decision"] in ("same", "review")]
-            def show(l):   # a linked entity by name; an unsure link as "text (→ candidate?)"
-                if l["decision"] in ("same", "new"):
-                    return l.get("name") or l["surface"]
-                return f"'{l['surface']}'" + (f" (→ {l['name']}?)" if l.get("name") else "")
-            obj = (ol and show(ol)) or f.get("value")
-            summary = f"{show(sl)} {f['predicate']} {obj}"
+            obj = (ol and (ol.get("name") or ol["surface"])) or f.get("value")
+            summary = f"{sl.get('name') or sl['surface']} {f['predicate']} {obj}"
             if not cypher("MATCH (r:ReviewItem {rid:$r}) RETURN 1 AS x", r=rid):
                 op("review", rid, summary, {"rid": rid, "kind": "hold", "summary": summary, "reason": r["reason"],
                                             "certainty": r["certainty"], "about": about, "chunk": chunk})
@@ -158,16 +146,13 @@ def apply(input_id, ops):
         elif o["op"] == "mention":
             cypher("MATCH (c:Chunk {uid:$c}) MATCH (e {uid:$e}) MERGE (c)-[:MENTIONS]->(e)", c=d["chunk"], e=d["entity"])
         elif o["op"] in ("set_status", "add_source") and "value" in d:
-            pf = ontology()["property_facts"][d["pf"]]
-            prop, lab = graph.ident(pf["property"]), graph.ident(pf["class"])
-            cypher(f"""MATCH (n:{lab} {{uid:$u}})
-                      SET n.{prop}_prev = CASE WHEN $chg THEN n.{prop} ELSE n.{prop}_prev END,
-                          n.changed_run = CASE WHEN $chg THEN $run ELSE n.changed_run END,
-                          n.changed_prop = CASE WHEN $chg THEN $prop ELSE n.changed_prop END,
-                          n.{prop} = $v,
-                          n.{prop}_sources = coalesce(n.{prop}_sources, []) +
-                                             [x IN $src WHERE NOT x IN coalesce(n.{prop}_sources, [])]""",
-                   u=d["uid"], v=d["value"], src=d["sources"], run=run, chg=d.get("change", False), prop=prop)
+            cypher("""MATCH (p:Product {uid:$u})
+                      SET p.status_prev = CASE WHEN $chg THEN p.status ELSE p.status_prev END,
+                          p.status_changed_run = CASE WHEN $chg THEN $run ELSE p.status_changed_run END,
+                          p.status = $v,
+                          p.status_sources = coalesce(p.status_sources, []) +
+                                             [x IN $src WHERE NOT x IN coalesce(p.status_sources, [])]""",
+                   u=d["uid"], v=d["value"], src=d["sources"], run=run, chg=d.get("change_status", False))
         elif o["op"] in ("create_rel", "add_source"):
             graph.merge_rel(d["s"], d["p"], d["o"], {**d["props"], "sources": list(d["sources"]),
                                                     "evidence": list(d["evidence"])}, run)
@@ -196,7 +181,7 @@ def mark_diff():
     graph.clear_diff_labels()
     cypher("MATCH (n) WHERE n.run_id IS NOT NULL AND n.run_id <> 'run0' AND NOT n:Chunk AND NOT n:Document "
            "AND NOT n:ReviewItem AND NOT n:OntologyCandidate SET n:DiffNew")
-    cypher("MATCH (n) WHERE n.changed_run IS NOT NULL SET n:DiffChanged")
+    cypher("MATCH (n:Product) WHERE n.status_changed_run IS NOT NULL SET n:DiffChanged")
     cypher("MATCH (n) WHERE n:ReviewItem OR n:OntologyCandidate SET n:DiffHold")
 
 
@@ -204,7 +189,7 @@ CYPHER_SHOWN = {
     "create_node": "MERGE (n:{cls} {{uid:$uid}}) ON CREATE SET n += $props",
     "create_chunk": "MERGE (c:Chunk {uid:$uid}) ... MERGE (d:Document)-[:HAS_CHUNK]->(c)",
     "mention": "MATCH (c:Chunk {uid:$c}) MATCH (e {uid:$e}) MERGE (c)-[:MENTIONS]->(e)",
-    "set_status": "MATCH (n {uid:$u}) SET n.<prop>_prev = n.<prop>, n.<prop> = $v, ...",
+    "set_status": "MATCH (p:Product {uid:$u}) SET p.status_prev = p.status, p.status = $v, ...",
     "create_rel": "MATCH (a {uid:$s}) MATCH (b {uid:$o}) MERGE (a)-[r:{p}]->(b) ON CREATE SET r += $props",
     "add_source": "... SET r.sources = r.sources + [new sources]",
     "review": "MERGE (r:ReviewItem {rid:$rid}) ... MERGE (r)-[:ABOUT]->(e)",

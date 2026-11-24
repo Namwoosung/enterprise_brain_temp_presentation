@@ -166,10 +166,7 @@ function vClean(a) {
   const chunks = a.chunks.map((c) => `<div class="chunk"><div class="cid">${esc(c.chunk_id)}${c.speaker ? ` · ${esc(c.speaker)} · ${esc(c.ts)}` : ""}</div>${highlight(c.text, mByChunk[c.chunk_id] || [])}</div>`).join("");
   const norms = a.normalizations.map((n) => `<tr><td>${esc(n.surface)}</td><td>${esc(n.result)}</td><td>${tag(n.method, n.method.startsWith("발음") ? "blue" : n.method.includes("동음") ? "orange" : n.method.startsWith("규칙") ? "purple" : "mint")}</td><td class="sub small">${esc(n.note || "")}</td></tr>`).join("");
   const near = a.near_misses.map((n) => `<tr><td class="mono">${esc(n.surface)}</td><td>${n.similar.map((s) => `${esc(s.alias)} <span class="mono small sub">${s.score}</span>`).join(", ")}</td><td class="small">${esc(n.note)}</td></tr>`).join("");
-  const leadByKind = { meeting_stt: "화자를 사람으로 바꾸고, 간투사 · 반복 · 불명확 구간을 지우고, 한글로 적힌 코드 · 단위를 되돌립니다 (피티 브이 사십이 → PT-V42).",
-    mail: "회신 체인 · 인용 · 서명 · 고지문을 지웁니다. 지우지 않으면 같은 사실이 회신 수만큼 추출됩니다.",
-    cmms_csv: "행 하나를 조각 하나로 만듭니다. 같은 행이 두 번 오면 한 번만 처리하고, 날짜 형식을 맞추고, 부품 표기는 사전으로 표준 코드에 연결합니다." };
-  return `<h2>2 · 정제</h2><p class="lead">${leadByKind[a.kind] || ""}</p>
+  return `<h2>2 · 정제</h2><p class="lead">${isStt ? "화자를 사람으로 바꾸고, 간투사 · 반복 · 불명확 구간을 지우고, 한글로 적힌 영문 약어를 되돌립니다." : "회신 체인 · 인용 · 서명 · 고지문을 지웁니다. 지우지 않으면 같은 사실이 회신 수만큼 추출됩니다."}</p>
   <div class="cols"><div class="card"><h4>원문 · 지운 줄과 이유 (${a.stats.removed}/${a.stats.lines})</h4>${lines}</div>
   <div><div class="card"><h4>정제본 · 조각 ${a.chunks.length}개 <span class="small sub">(초록: 사전에서 찾은 언급, 주황: 동음 후보 여럿)</span></h4>${chunks}</div>
   <div class="card"><h4>정규화 표</h4><table><tr><th>원문</th><th>결과</th><th>방법</th><th>메모</th></tr>${norms || `<tr><td class="empty" colspan="4">없음</td></tr>`}</table></div>
@@ -196,16 +193,6 @@ function vExtract(a) {
   const unk = a.unknown_terms.map((t) => `${tag(t.term + " · " + (t.guess_class || ""), "purple")}`).join(" ");
   const ref = a.unresolved_references.map((q) => `<tr><td>${esc(q.text)}</td><td class="small">${esc(q.why)}</td></tr>`).join("");
   const L = a.llm;
-  if (a.method === "rule") {
-    const m = a.mapping;
-    const rules = m.facts.map((r) => `<tr><td class="mono" style="color:var(--purple)">${esc(r.p)}</td><td class="mono small">${esc(r.value_from ? r.value_from + " → 값" : (r.from || []).join(" + ") + " → " + r.object_class)}</td></tr>`).join("");
-    return `<h2>3 · 추출 (규칙 매핑)</h2><p class="lead">정형 데이터는 정답이 정해져 있어 LLM을 쓰지 않습니다. 열 → 관계 매핑 규칙으로 후보를 만들고, 같은 입력이면 항상 같은 결과가 나옵니다.</p>
-    <div class="card small">${tag("규칙 · LLM 없음", "purple")} 매퍼 <span class="mono">${esc(a.prompt_version)}</span> · 규칙 위치 config/demo.yaml <span class="mono">cmms_mapping</span></div>
-    <div class="cols" style="margin-top:12px"><div class="card"><h4>매핑 규칙 · 주어 = ${esc(m.subject.from)} (${esc(m.subject.class)})</h4><table><tr><th>관계</th><th>열</th></tr>${rules}</table>
-      <p class="small sub">노드 속성으로 옮기는 열: ${esc(m.props.join(", "))}</p></div>
-    <div class="card"><h4>사실 후보 ${a.facts.length}개 · 모두 아직 후보</h4><table><tr><th></th><th>행</th><th>주어</th><th>관계</th><th>목적어 · 값</th></tr>${a.facts.map((f) =>
-      `<tr><td class="mono">${f.fact_id}</td><td class="mono small">${f.row_line}</td><td>${esc(f.subject)}</td><td class="mono" style="color:var(--purple)">${esc(f.predicate)}</td><td>${esc(f.object ?? f.value ?? "")}</td></tr>`).join("")}</table></div></div>`;
-  }
   return `<h2>3 · 추출</h2><p class="lead">LLM이 온톨로지의 관계 목록 안에서만 사실 후보를 뽑습니다. 목록 밖의 관계와 모르는 용어는 버리지 않고 따로 모읍니다.</p>
   <div class="card small">${tag(L.mode === "live" ? "실시간 호출" : "녹화본 재생", L.mode === "live" ? "mint" : "blue")}
     모델 <span class="mono">${esc(L.model)}</span> · ${esc(L.base_url || "")} · ${esc(L.seconds)}초 · 녹화 ${esc(L.recorded_at)} · 프롬프트 ${esc(a.prompt_version)}
@@ -229,28 +216,24 @@ function vResolve(a) {
   return `<h2>4 · 연결 (Entity resolution)</h2><p class="lead">텍스트 표현을 그래프의 개체 ID로 연결합니다. 점수 ${a.thresholds.accept} 이상은 같음, ${a.thresholds.review}–${a.thresholds.accept}는 사람 검토, 그 아래는 연결하지 않습니다.</p>
   <div class="checks">${Object.entries(st).map(([k, v]) => `${decisionTag(k)} <b>${v}</b>`).join(" &nbsp; ")}</div>
   <div class="card"><table><tr><th></th><th>표현</th><th>판정</th><th>개체</th><th>점수</th><th>근거</th></tr>${rows}</table></div>
-  <div class="card small sub">증거 순서: 정확한 별칭 · 마스터 코드 → 주변 문장의 맥락 단어(EQ-017은 FAB마다 있음) → 번호 없는 정비 작업은 CMMS의 같은 설비 · 부품 · 날짜 작업 → 문자열 유사도. 코드(EQ-017 · EQ-071)는 유사도만으로 확정하지 않습니다. 애매하면 합치지 않고 검토로 남깁니다.</div>`;
+  <div class="card small sub">증거 순서: 정확한 별칭 → 주변 문장의 맥락 단어(동음 후보) → 회사 이름으로 제품 지칭 → 문자열 유사도. 코드(H20 · H200)는 유사도만으로 확정하지 않습니다. 애매하면 합치지 않고 검토로 남깁니다.</div>`;
 }
-
-// a confident link shows the entity; an unsure one shows the text and the candidate with "?"
-const linkName = (l, raw) => !l ? esc(raw) : (l.decision === "same" || l.decision === "new") ? esc(l.name || raw)
-  : `<span class="sub">'${esc(l.surface)}'</span> → ${esc(l.name || "?")}?`;
 
 function vValidate(a) {
   const ck = (c) => `<span class="chk ${c.ok === true ? "ok" : c.ok === false ? "no" : "q"}" title="${esc(c.detail)}">${c.ok === true ? "✓" : c.ok === false ? "✗" : "?"} ${esc(c.name)}</span>`;
   const facts = a.results.map((r) => {
     const f = r.fact, s = r.subject, o = r.object;
-    return `<div class="card"><div class="factline"><span class="mono sub">${r.fact_id}</span> ${linkName(s, f.subject)}<span class="p">${esc(f.predicate)}</span>${o ? linkName(o, f.object) : esc(f.value)}
+    return `<div class="card"><div class="factline"><span class="mono sub">${r.fact_id}</span> ${esc(s?.name || f.subject)}<span class="p">${esc(f.predicate)}</span>${esc(o ? (o.name || f.object) : f.value)}
       &nbsp; ${decisionTag(r.decision)} <span class="small">${esc(r.reason)}</span> ${r.risk === "high" ? tag("고위험 관계", "red") : ""}</div>
       <div class="checks">${r.checks.map(ck).join("")}</div>
       <div class="small sub">${r.checks.map((c) => `${esc(c.name)}: ${esc(c.detail)}`).join(" · ")}</div></div>`;
   }).join("");
   const oc = a.ontology_candidates.map((c) => `<tr><td class="mono">${esc(c.name)}</td><td>${esc(c.between.join(" · "))}</td><td>${esc(c.topic)}</td>
-    <td class="small">${esc(c.phrase || "")}</td></tr>`).join("");
+    <td class="small">${c.sources.length ? `기사 ${esc(c.sources.join(", "))} (기사 표기: ${esc(c.corpus_names.join(", "))})` : "기사 근거 없음"}</td></tr>`).join("");
   const tc = a.term_candidates.map((t) => `<tr><td>${esc(t.term)}</td><td>${decisionTag(t.decision)}</td><td class="small">${esc(t.reason)}</td></tr>`).join("");
   const qs = a.questions.map((q) => `<tr><td>${esc(q.text)}</td><td>${decisionTag(q.decision)}</td><td class="small">${esc(q.reason)}</td></tr>`).join("");
   const lx = a.lexicon_candidates.map((l) => `<tr><td>${esc(l.spoken)}</td><td>${esc(l.pref)}</td><td class="mono small">${esc(l.ref)}</td></tr>`).join("");
-  return `<h2>5 · 검증</h2><p class="lead">스키마 · 개체 연결 · 근거 문장 · 확신도(추정 · 예정 표현) · 기준 시스템(CMMS · 알람 로그) · 문서 대조를 보고 승인 / 보류 / 거절을 정합니다. 문서가 기준 시스템과 다르면 덮어쓰지 않고 보류합니다. 추정은 근거가 있어도 확정으로 올리지 않습니다.</p>
+  return `<h2>5 · 검증</h2><p class="lead">스키마 · 개체 연결 · 근거 문장 · 기사 대조 · 확신도를 보고 승인 / 보류 / 거절을 정합니다. 추정은 근거가 있어도 확정으로 올리지 않습니다.</p>
   <div class="checks">${Object.entries(a.summary).map(([k, v]) => `${decisionTag(k)} <b>${v}</b>`).join(" &nbsp; ")}</div>
   ${facts}
   <div class="cols" style="margin-top:12px"><div>
@@ -285,19 +268,19 @@ async function renderOverview() {
     const o = await api("/api/overview");
     const cls = Object.entries(o.ontology.classes).map(([k, v]) => tag(`${k} · ${v.label_ko}`, "mint")).join(" ");
     const rels = Object.entries(o.ontology.relations).map(([k, v]) => `<tr><td class="mono">${k}</td><td>${esc(v.from)} → ${esc(v.to)}</td><td>${esc(v.label_ko)}</td><td>${v.fact ? tag("추출 대상", "purple") : ""}</td></tr>`).join("");
-    const arts = o.reference.map((a) => `<tr><td class="mono">${a.id}</td><td>${a.official ? tag("기준 시스템 · " + a.official, "mint") : tag("문서", "blue")}</td><td>${esc(a.date)}</td>
-      <td>${esc(a.title)}<br><span class="sub small">${esc(a.summary)}</span></td><td class="small">${esc(a.system)}<br><span class="sub mono">${esc(a.source || "")}</span></td></tr>`).join("");
+    const arts = o.corpus.map((a) => `<tr><td class="mono">${a.id}</td><td>${a.baseline ? tag("기준 KG", "mint") : tag("새 기사 · 대조용", "blue")}</td><td>${esc(a.date)}</td>
+      <td>${esc(a.title)}<br><span class="sub small">${esc(a.summary)}</span></td><td class="small"><a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.publisher)}</a></td></tr>`).join("");
     const cq = (o.cq_run0 || []).map((q) => `<tr><td class="mono">${q.id}</td><td>${esc(q.question)}</td><td class="small">${rowsText(q.rows)}</td></tr>`).join("");
-    $("#view").innerHTML = `<h2>기준 상태 (run 0)</h2><p class="lead">가상 팹(FAB-A · FAB-B)의 설비 마스터와 CMMS 이력 · 알람 로그 · SOP · 회의자료로 만든 KG입니다. 여기에 CMMS 증분 1건, 메일 1건, 회의록 STT 1건을 넣어 무엇이 달라지는지 봅니다.</p>
+    $("#view").innerHTML = `<h2>기준 상태 (run 0)</h2><p class="lead">팀이 스크랩해 온 기사로 만든 KG입니다. 여기에 메일 1건과 STT 회의록 1건을 넣어 무엇이 달라지는지 봅니다.</p>
     <div class="counters" style="grid-template-columns:repeat(4,1fr)">
       <div class="counter"><div class="v">${o.neo4j.nodes ?? "-"}</div><div class="l">노드 (현재)</div></div>
       <div class="counter"><div class="v">${o.neo4j.relationships ?? "-"}</div><div class="l">관계 (현재)</div></div>
       <div class="counter"><div class="v">${o.entities}</div><div class="l">마스터 개체</div></div>
-      <div class="counter"><div class="v">${o.reference.filter((a) => a.official).length} + ${o.reference.filter((a) => !a.official).length}</div><div class="l">기준 자료 (시스템 + 문서)</div></div></div>
+      <div class="counter"><div class="v">${o.corpus.filter((a) => a.baseline).length} + ${o.corpus.filter((a) => !a.baseline).length}</div><div class="l">기사 (기준 + 대조용)</div></div></div>
     <div class="cols"><div><div class="card"><h4>온톨로지 v${esc(o.ontology.version)} · 클래스</h4>${cls}</div>
-      <div class="card"><h4>관계</h4><table>${rels}</table><p class="small sub">속성 사실: ${Object.entries(o.ontology.property_facts).map(([k, v]) => `${esc(k)} → ${esc(v.class)}.${esc(v.property)}`).join(" · ")}. 증상 · PM 주기 같은 개념은 v1에 없습니다.</p></div></div>
+      <div class="card"><h4>관계</h4><table>${rels}</table><p class="small sub">속성 사실: Product.status ∈ announced · sampling · mass_production. 회사 간 협력 관계는 v1에 없습니다.</p></div></div>
       <div><div class="card"><h4>업무 질문 (CQ) · run 0 답</h4><table>${cq || '<tr><td class="empty">초기화를 먼저 실행하세요</td></tr>'}</table></div></div></div>
-    <div class="card"><h4>기준 자료 (모두 가상 데이터 · 부품 · 고장 용어는 공개된 식각 설비 지식 기준)</h4><table><tr><th></th><th></th><th>날짜</th><th>내용</th><th>시스템 · 위치</th></tr>${arts}</table></div>`;
+    <div class="card"><h4>기사 코퍼스 (요약은 직접 작성 · 본문은 복제하지 않음)</h4><table><tr><th></th><th></th><th>날짜</th><th>내용</th><th>출처</th></tr>${arts}</table></div>`;
     showView("baseline"); renderOverlay();
   } catch (e) { $("#view").innerHTML = ""; showError(e); }
 }
@@ -325,7 +308,7 @@ async function renderCompare() {
       <div class="counter"><div class="v">${g.stats.nodes}</div><div class="l">현재 노드</div></div></div>
     <div class="card"><h4>업무 질문 (CQ) 전 / 후</h4><table><tr><th></th><th>질문</th><th>run 0</th><th>지금</th></tr>${cq}</table></div>
     <div class="cols" style="margin-top:12px"><div>
-      <div class="card"><h4>상태가 바뀐 사실</h4>${tbl(g.changed, ["이름", "속성", "이전", "현재", "근거"])}</div>
+      <div class="card"><h4>상태가 바뀐 사실</h4>${tbl(g.changed, ["이름", "이전", "현재", "근거"])}</div>
       <div class="card"><h4>새 관계</h4>${tbl(g.new_rels, ["주어", "관계", "목적어", "근거"])}</div>
       <div class="card"><h4>새 개체</h4>${tbl(g.new_nodes, ["클래스", "이름", "run"])}</div></div>
     <div><div class="card"><h4>보류 · 질문 (그래프의 ReviewItem)</h4>${tbl(g.reviews, ["종류", "내용", "사유"])}</div>
@@ -357,7 +340,7 @@ function showView(name) {
   document.querySelectorAll("#graph-bar [data-view]").forEach((b) => b.classList.toggle("primary", b.dataset.view === name));
 }
 function renderGraphBar() {
-  const v = [["baseline", "기준 KG"], ["focus", "EQ-017 주변"], ["document", "이 문서"], ["diff", "변화 (색 표시)"], ["diff_rels", "이 입력의 새 관계"]];
+  const v = [["baseline", "기준 KG"], ["document", "이 문서"], ["diff", "변화 (색 표시)"], ["diff_rels", "이 입력의 새 관계"]];
   $("#graph-bar").innerHTML = `<b>Neo4j Browser</b>` + v.map(([k, l]) => `<button class="btn" data-view="${k}">${l}</button>`).join("");
   $("#graph-bar").onclick = (e) => {
     const b = e.target.closest("[data-view]");

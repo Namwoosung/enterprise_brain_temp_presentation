@@ -1,11 +1,11 @@
 """Graph writes shared by reset (run 0) and load (later runs). Plain Cypher only (no APOC)."""
 import re
 
-from .common import cypher, entities, reference, ontology, uid, class_of, entity_uid
+from .common import cypher, entities, corpus, ontology, uid, class_of
 
 META_LABEL = "DemoMeta"            # marker node so reset never wipes a foreign database
-META_ID = "eb-kg-demo"
-META_IDS_OLD = ["eb-news-kg-demo"]   # earlier demo versions: still ours, safe to wipe
+META_ID = "eb-news-kg-demo"
+META_IDS_OLD = ["eb-kg-demo"]   # other demo versions (fab domain): still ours, safe to wipe
 DIFF_LABELS = ["DiffNew", "DiffChanged", "DiffHold"]
 OPS_LABELS = ["ReviewItem", "OntologyCandidate"]
 
@@ -94,46 +94,34 @@ def merge_rel(s_uid, rel, o_uid, props, run_id):
     return "created" if rows[0]["created"] else "exists"
 
 
-# master fields that become structural relationships instead of node properties
-STRUCTURAL = {"fab": ("LOCATED_IN", "Fab"), "model": ("INSTANCE_OF", "EquipmentModel"), "vendor": ("MADE_BY", "Vendor")}
-MASTER_ONLY = {"class", "prompt", *STRUCTURAL}
-
-
-def set_property_fact(u, pf_name, value, source, run_id):
-    """Property facts (e.g. WORK_STATUS -> MaintenanceWork.status) keep their sources next to the value."""
-    pf = ontology()["property_facts"][pf_name]
-    prop = ident(pf["property"])
-    cypher(f"MATCH (n:{ident(pf['class'])} {{uid:$u}}) SET n.{prop} = $v, "
-           f"n.{prop}_sources = coalesce(n.{prop}_sources, []) + [x IN [$a] WHERE NOT x IN coalesce(n.{prop}_sources, [])]",
-           u=u, v=value, a=source)
-
-
 def load_baseline():
-    """Run 0: master entities + facts from the reference sources (CMMS history, alarm log, documents)."""
+    """Run 0: master entities + facts from baseline news articles."""
     run = "run0"
     cypher(f"MERGE (m:{META_LABEL} {{id:$id}}) SET m.note = 'created by demo reset'", id=META_ID)
-    pfs = ontology()["property_facts"]
     for e in entities():
-        props = {k: v for k, v in e.items() if k not in MASTER_ONLY or k == "fab"}
-        props["uid"] = entity_uid(e)
-        for pf in pfs.values():
-            if pf["class"] == e["class"] and pf["property"] in props:
-                props[pf["property"] + "_sources"] = ["master"]
+        props = {k: v for k, v in e.items() if k not in ("class", "country", "issued_by", "targets", "prompt")}
+        props["uid"] = uid(e["class"], e["code"])
+        if "status" in props:
+            props["status_sources"] = []
         merge_node(e["class"], props, run)
+    structural = {"country": "HEADQUARTERED_IN", "issued_by": "ISSUED_BY", "targets": "TARGETS"}
     for e in entities():
-        for field, (rel, cls) in STRUCTURAL.items():
-            if e.get(field) and rel in ontology()["relations"] and ontology()["relations"][rel]["from"] == e["class"]:
-                merge_rel(entity_uid(e), rel, uid(cls, e[field]), {"certainty": "confirmed", "sources": ["master"]}, run)
+        for field, rel in structural.items():
+            if e.get(field):
+                merge_rel(uid(e["class"], e["code"]), rel, uid("Country", e[field]),
+                          {"certainty": "confirmed", "sources": ["master"]}, run)
     rels = ontology()["relations"]
-    for a in reference():
+    for a in corpus():
         if not a.get("baseline"):
             continue
-        merge_node("Document", {"uid": uid("Document", a["id"]), "doc_id": a["id"], "kind": a.get("kind", "doc"),
-                                "title": a["title"], "source": a.get("source"), "system": a.get("system"),
-                                "official": a.get("official"), "date": str(a["date"]), "summary": a["summary"]}, run)
+        merge_node("Document", {"uid": uid("Document", a["id"]), "doc_id": a["id"], "kind": "news",
+                                "title": a["title"], "url": a["url"], "date": str(a["date"]),
+                                "publisher": a["publisher"], "summary": a["summary"]}, run)
         for f in a["facts"]:
-            if f["p"] in pfs:
-                set_property_fact(f["s"], f["p"], f["value"], a["id"], run)
+            if f["p"] == "PRODUCT_STATUS":
+                cypher("MATCH (p:Product {uid:$s}) SET p.status = $v, "
+                       "p.status_sources = coalesce(p.status_sources, []) + [$a]",
+                       s=f["s"], v=f["value"], a=a["id"])
             elif f["p"] in rels:
                 merge_rel(f["s"], f["p"], f["o"], {"certainty": "confirmed", **(f.get("props") or {}),
                                                    "sources": [a["id"]]}, run)

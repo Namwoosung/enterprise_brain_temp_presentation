@@ -13,18 +13,14 @@ def run(input_id):
     d = input_def(input_id)
     path = ROOT / d["file"]
     raw = path.read_text(encoding="utf-8")
-    if path.suffix.lower() == ".csv":   # exports have no front matter: metadata comes from config
-        meta, body = dict(d.get("meta") or {}), raw
-    else:
-        meta, body = split_front_matter(raw)
+    meta, body = split_front_matter(raw)
     digest = sha256(raw)
     prev = None
     p = artifact_path(input_id, "collect")
     if p.exists():
         prev = json.loads(p.read_text(encoding="utf-8"))["record"]
     record = {
-        "doc_id": meta.get("doc_id"),
-        "source_id": meta.get("source_id") or meta.get("doc_id"),
+        "source_id": meta.get("doc_id"),
         "source_type": meta.get("kind"),
         "title": meta.get("title"),
         "file": d["file"],

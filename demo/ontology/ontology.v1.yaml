@@ -1,54 +1,42 @@
-# Ontology v1 — baseline ("기존 온톨로지") for the fab equipment-maintenance KG demo.
-# Dummy fab (FAB-A / FAB-B). Vocabulary follows common public practice:
-#   equipment states ~ SEMI E10 categories, work types ~ CMMS (PM = 예방정비, CM = 사후정비),
-#   chamber parts ~ typical plasma-etch components (pressure gauge, throttle valve, RF generator, ...).
+# Ontology v1 — baseline ("기존 온톨로지") for the semiconductor / AI news KG demo.
 # CUSTOMIZE: replace classes/relations with your domain. Downstream code generates from this file:
 #   uid rule, unique constraints (scripts/reset.py), LLM output schema (pipeline/extract.py),
 #   validation (pipeline/validate.py).
 version: 1.0.0
-name: fab-equipment-maintenance (demo)
+name: semiconductor-ai-news (demo)
 
-# key  = business key fields; uid = "<Class>:<key values joined by '/'>", e.g. "Equipment:FAB-A/EQ-017"
-#        (EQ-017 exists in both fabs -> the code alone is not a key)
+# key  = business key fields; uid = "<Class>:<key values joined by '/'>", e.g. "Company:sk-hynix"
 # required = must be present on every node of the class
 classes:
-  Fab:             {label_ko: 팹, key: [code], required: [code, name]}
-  Equipment:       {label_ko: 설비, key: [fab, code], required: [fab, code, name, serial],
-                    enums: {state: [productive, standby, engineering, scheduled_down, unscheduled_down, non_scheduled]}}
-  EquipmentModel:  {label_ko: 설비 모델, key: [code], required: [code, name]}
-  Vendor:          {label_ko: 공급사, key: [code], required: [code, name]}
-  PartType:        {label_ko: 부품 유형, key: [code], required: [code, name]}
-  FailureMode:     {label_ko: 고장 모드, key: [code], required: [code, name]}
-  Alarm:           {label_ko: 알람, key: [code], required: [code, name]}
-  MaintenanceWork: {label_ko: 정비 작업, key: [code], required: [code, name, status],
-                    enums: {status: [planned, in_progress, completed]}}
-  Document:        {label_ko: 문서, key: [doc_id], required: [doc_id, kind, title]}
-  Chunk:           {label_ko: 문서 조각, key: [chunk_id], required: [chunk_id, text]}
+  Company:    {label_ko: 회사, key: [code], required: [code, name]}
+  Product:    {label_ko: 제품, key: [code], required: [code, name],
+               enums: {status: [announced, sampling, mass_production]}}
+  Technology: {label_ko: 기술, key: [code], required: [code, name]}
+  Country:    {label_ko: 국가, key: [code], required: [code, name]}
+  Policy:     {label_ko: 정책·규제, key: [code], required: [code, name]}
+  Document:   {label_ko: 문서, key: [doc_id], required: [doc_id, kind, title]}
+  Chunk:      {label_ko: 문서 조각, key: [chunk_id], required: [chunk_id, text]}
 
-# fact: true  -> extraction target; carries certainty + evidence on the relationship.
-# official    -> system of record for this fact ("기준 시스템"); validate.py compares against it.
-# hedged      -> a suspected statement is the normal form of this relation (still reviewed: high risk)
+# fact: true  -> LLM extraction target (v1 watch scope: HBM supply chain); carries certainty + evidence.
+# no fact     -> loaded from the master list or baseline articles only, not extracted by the LLM in v1.
+# key: [...]  -> relationship properties that are part of its identity (MERGE key):
+#                SK hynix SUPPLIES NVIDIA {item: HBM3} and {item: HBM3E} are two different facts.
 relations:
-  LOCATED_IN:      {from: Equipment, to: Fab, label_ko: 위치}
-  INSTANCE_OF:     {from: Equipment, to: EquipmentModel, label_ko: 모델}
-  MADE_BY:         {from: EquipmentModel, to: Vendor, label_ko: 제조사}
-  HAS_PART:        {from: EquipmentModel, to: PartType, label_ko: 구성 부품}
-  FAILURE_OF:      {from: FailureMode, to: PartType, label_ko: 고장 부위}
-  INDICATES:       {from: Alarm, to: FailureMode, label_ko: 가능 원인}
-  ON_EQUIPMENT:    {from: MaintenanceWork, to: Equipment, label_ko: 대상 설비, fact: true, official: cmms}
-  USED_PART_TYPE:  {from: MaintenanceWork, to: PartType, label_ko: 사용 부품, fact: true, official: cmms}
-  RAISED_ALARM:    {from: Equipment, to: Alarm, label_ko: 알람 발생, fact: true, official: alarm_log}
-  SUSPECTED_CAUSE: {from: Equipment, to: FailureMode, label_ko: 추정 원인, fact: true, hedged: true}
-  CONFIRMED_CAUSE: {from: Equipment, to: FailureMode, label_ko: 확정 원인, fact: true}
-  HAS_CHUNK:       {from: Document, to: Chunk, label_ko: 조각}
-  MENTIONS:        {from: Chunk, to: "*", label_ko: 언급}
+  HEADQUARTERED_IN: {from: Company, to: Country, label_ko: 본사 국가}
+  ISSUED_BY:        {from: Policy, to: Country, label_ko: 시행 국가}
+  TARGETS:          {from: Policy, to: Country, label_ko: 대상 국가}
+  SUBSIDIZED_BY:    {from: Company, to: Policy, label_ko: 보조금 수혜, props: [amount, stage]}
+  DEVELOPS:         {from: Company, to: Product, label_ko: 개발, fact: true}
+  SUPPLIES:         {from: Company, to: Company, label_ko: 공급, fact: true, props: [item], key: [item]}
+  USES_COMPONENT:   {from: Product, to: Product, label_ko: 부품 사용, fact: true}
+  FABRICATED_BY:    {from: Product, to: Company, label_ko: 위탁 생산, fact: true, props: [process]}
+  USES_TECH:        {from: Product, to: Technology, label_ko: 사용 기술, fact: true}
+  RESTRICTED_BY:    {from: Product, to: Policy, label_ko: 규제 대상, fact: true}
+  HAS_CHUNK:        {from: Document, to: Chunk, label_ko: 조각}
+  MENTIONS:         {from: Chunk, to: "*", label_ko: 언급}
 
 # Facts that set a node property instead of adding a relationship.
 property_facts:
-  WORK_STATUS:     {class: MaintenanceWork, property: status, label_ko: 작업 상태, official: cmms}
-  EQUIPMENT_STATE: {class: Equipment, property: state, label_ko: 설비 상태 (SEMI E10 분류)}
-
-# Classes the pipeline may create when a document names something the master does not know yet.
-new_entity_classes: [MaintenanceWork]
+  PRODUCT_STATUS: {class: Product, property: status, label_ko: 제품 상태}
 
 certainty: [confirmed, suspected]

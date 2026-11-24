@@ -16,24 +16,23 @@
 
 | 단계 | 모듈 | 입력 → 출력 | 핵심 |
 |---|---|---|---|
-| 수집 | `collect.py` | md · CSV 파일 → 수집 기록 | 원본 무수정 · sha256 · 버전 |
-| 정제 | `clean.py` | 원문 → 조각(chunk) · 정규화 표 · 언급 | CMMS: 행 = 조각 · 중복 행 · 날짜 형식 / 메일: 회신 체인·인용·서명·고지문 제거 / STT: 화자·간투사·반복·불명확·발음 복원 / 날짜 · 단위 / 사전 스캔 |
-| 추출 | `extract.py` + `llm.py` | 조각 → 사실 후보 · 온톨로지 밖 관계 · 모르는 용어 · 지시어 | CMMS는 열 → 관계 매핑 규칙(LLM 없음) / 문서는 온톨로지에서 만든 관계 목록으로 출력 제한, JSON 모드, 녹화/재생 |
-| 연결 | `resolve.py` + `official.py` | 표현 → 개체 uid | 별칭 · 마스터 코드 → 맥락(FAB) → 번호 없는 작업은 CMMS 작업과 대조 → 유사도, 임계값 2개, 새 작업 |
-| 검증 | `validate.py` + `official.py` | 후보 → 승인 · 보류 · 거절 · 온톨로지 후보 · 질문 | 스키마 · 개체 · 근거 문장 · 확신도(추정 · 예정) · 기준 시스템(CMMS · 알람 로그) · 문서 대조 |
+| 수집 | `collect.py` | md 파일 → 수집 기록 | 원본 무수정 · sha256 · 버전 |
+| 정제 | `clean.py` | 원문 → 조각(chunk) · 정규화 표 · 언급 | 메일: 회신 체인·인용·서명·고지문 제거 / STT: 화자·간투사·반복·불명확·발음 복원 / 상대 날짜 / 사전 스캔 |
+| 추출 | `extract.py` + `llm.py` | 조각 → 사실 후보 · 온톨로지 밖 관계 · 모르는 용어 · 지시어 | 온톨로지에서 만든 관계 목록으로 출력 제한, JSON 모드, 녹화/재생 |
+| 연결 | `resolve.py` | 표현 → 개체 uid | 별칭 → 맥락 → 회사명으로 제품 지칭 → 유사도, 임계값 2개, 새 개체 |
+| 검증 | `validate.py` | 후보 → 승인 · 보류 · 거절 · 온톨로지 후보 · 질문 | 스키마 · 개체 · 근거 문장 · 기사 대조 · 확신도 |
 | 적재 | `load.py` + `graph.py` | 판정 → Neo4j | 변경 계획(staging) → 반영(publish) → 재계획 0 확인 |
 | 비교 | `diff.py` | Neo4j → diff · 제안 · CQ | run 0 대비, `runs/ontology.v1.1.proposal.yaml` |
 
 ## 그래프 모델 (Neo4j)
-- **개체**: `Fab · Equipment · EquipmentModel · Vendor · PartType · FailureMode · Alarm · MaintenanceWork` — 키는 `uid`(`<Class>:<키 값>`, 설비는 `Equipment:FAB-A/EQ-017`처럼 FAB + 코드), 유니크 제약
+- **개체**: `Company · Product · Technology · Country · Policy` — 키는 `uid`(`<Class>:<code>`), 유니크 제약
 - **문서**: `(:Document)-[:HAS_CHUNK]->(:Chunk)-[:MENTIONS]->(개체)` — 근거를 따라갈 수 있는 어휘 그래프
-- **사실 관계**: `ON_EQUIPMENT`, `USED_PART_TYPE`, `RAISED_ALARM`, `SUSPECTED_CAUSE` 등에 다음 속성을 둡니다.
+- **사실 관계**: `SUPPLIES`, `USES_TECH` 등에 다음 속성을 둡니다.
   - `certainty`
-  - `sources`: 입력 문서 id와 기준 자료 id
+  - `sources`: 문서 id와 기사 id
   - `evidence`: 조각 id
   - `first_run`, `last_run`
-- **속성 사실**: `WORK_STATUS → MaintenanceWork.status`, `EQUIPMENT_STATE → Equipment.state`. 값을 바꿀 때 `<속성>_prev`, `changed_run`, `<속성>_sources`를 남기고 이전 값을 지우지 않습니다.
-- **기준 시스템**: 정비 작업은 CMMS, 알람은 알람 로그가 기준입니다(`ontology` 관계의 `official`). 문서가 다르면 덮어쓰지 않고 보류합니다.
+- **상태 변경**: `Product.status`를 바꾸고 `status_prev`, `status_changed_run`, `status_sources`를 남깁니다. 이전 값을 지우지 않습니다.
 - **운영 노드**
   - `(:ReviewItem {kind: hold | question | new_entity})-[:ABOUT]->(개체)`, `-[:FROM_CHUNK]->(:Chunk)`
   - `(:OntologyCandidate {kind: relation | term})-[:ABOUT]->(개체)`, `-[:SEEN_IN]->(:Chunk)`
@@ -44,7 +43,7 @@
 Community 에디션은 사용자 DB가 1개입니다. 그래서 DB를 나누지 않고 다음 값으로 구분합니다.
 - 노드: `run_id`
 - 관계: `first_run`
-- 속성 값: `changed_run`
+- 상태: `status_changed_run`
 
 run 0의 CQ 답은 초기화 때 `runs/cq_run0.json`으로 저장합니다.
 

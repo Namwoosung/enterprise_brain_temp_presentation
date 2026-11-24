@@ -59,9 +59,8 @@ def entities():
 
 
 @lru_cache(None)
-def reference():
-    """Reference sources (official system exports + approved documents) behind the baseline KG."""
-    return yaml.safe_load(path_of("reference").read_text(encoding="utf-8"))["docs"]
+def corpus():
+    return yaml.safe_load(path_of("corpus").read_text(encoding="utf-8"))["articles"]
 
 
 def input_def(input_id):
@@ -79,22 +78,9 @@ def class_of(u):
     return u.split(":", 1)[0] if isinstance(u, str) and ":" in u else None
 
 
-def entity_uid(e):
-    """uid from the ontology key of the entity's class (Equipment: fab + code)."""
-    keys = ontology()["classes"][e["class"]]["key"]
-    return uid(e["class"], *[e[k] for k in keys])
-
-
 def entity_index():
     """uid -> entity dict (from the master list)."""
-    return {entity_uid(e): e for e in entities()}
-
-
-def read_csv_rows(rel_path):
-    """CSV rows as dicts, with the 1-based file line number (header = line 1)."""
-    import csv
-    with open(ROOT / rel_path, encoding="utf-8", newline="") as f:
-        return [{**row, "_line": n} for n, row in enumerate(csv.DictReader(f), 2)]
+    return {uid(e["class"], e["code"]): e for e in entities()}
 
 
 def sha256(text):

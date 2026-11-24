@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import yaml  # noqa: E402
 
-from pipeline.common import env, config, ontology, reference, entities, read_artifact  # noqa: E402
+from pipeline.common import env, config, ontology, corpus, entities, read_artifact  # noqa: E402
 from pipeline.steps import ORDER, run_step  # noqa: E402
 from pipeline import diff, graph, llm  # noqa: E402
 import reset as reset_mod  # noqa: E402
@@ -70,9 +70,8 @@ def overview():
     o = ontology()
     return {"ontology": {"version": o["version"], "classes": o["classes"], "relations": o["relations"],
                          "property_facts": o["property_facts"]},
-            "reference": [{k: a.get(k) for k in ("id", "baseline", "official", "kind", "date", "system", "source",
-                                                 "title", "summary")}
-                          | {"facts": len(a["facts"])} for a in reference()],
+            "corpus": [{k: a.get(k) for k in ("id", "baseline", "date", "publisher", "url", "title", "summary")}
+                       | {"facts": len(a["facts"])} for a in corpus()],
             "entities": len(entities()), "cq_run0": diff.load_cq("run0"), "neo4j": neo4j_status()}
 
 

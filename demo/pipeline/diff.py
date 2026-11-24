@@ -34,9 +34,9 @@ def graph_diff():
     new_nodes = cypher("""MATCH (n) WHERE n.run_id IS NOT NULL AND n.run_id <> 'run0'
                             AND NOT n:Chunk AND NOT n:Document AND NOT n:ReviewItem AND NOT n:OntologyCandidate
                           RETURN labels(n)[0] AS 클래스, n.name AS 이름, n.uid AS uid, n.run_id AS run""")
-    changed = cypher("""MATCH (n) WHERE n.changed_run IS NOT NULL
-                        RETURN n.name AS 이름, n.changed_prop AS 속성, n[n.changed_prop + '_prev'] AS 이전,
-                               n[n.changed_prop] AS 현재, n.changed_run AS run, n[n.changed_prop + '_sources'] AS 근거""")
+    changed = cypher("""MATCH (p:Product) WHERE p.status_changed_run IS NOT NULL
+                        RETURN p.name AS 이름, p.status_prev AS 이전, p.status AS 현재, p.status_changed_run AS run,
+                               p.status_sources AS 근거""")
     new_rels = cypher("""MATCH (a)-[r]->(b) WHERE r.first_run IS NOT NULL AND r.first_run <> 'run0'
                            AND NOT type(r) IN ['HAS_CHUNK','MENTIONS','ABOUT','FROM_CHUNK','SEEN_IN']
                          RETURN a.name AS 주어, type(r) AS 관계, b.name AS 목적어, r.sources AS 근거, r.first_run AS run""")
@@ -48,7 +48,7 @@ def graph_diff():
     cands = cypher("""MATCH (o:OntologyCandidate) OPTIONAL MATCH (o)-[:ABOUT]->(e)
                       RETURN o.kind AS 종류, o.name AS 이름, o.detail AS 표현, o.topic AS 대상, o.sources AS 근거,
                              o.run_id AS run, collect(e.name) AS 관련, o.cid AS cid ORDER BY cid""")
-    docs = cypher("MATCH (d:Document) WHERE d.run_id <> 'run0' RETURN d.doc_id AS doc, d.title AS 제목, d.kind AS 종류")
+    docs = cypher("MATCH (d:Document) WHERE d.kind <> 'news' RETURN d.doc_id AS doc, d.title AS 제목, d.kind AS 종류")
     return {"new_nodes": new_nodes, "changed": changed, "new_rels": new_rels, "more_sources": more_src,
             "reviews": reviews, "candidates": cands, "documents": docs, "stats": graph.stats()}
 
@@ -65,7 +65,10 @@ def ontology_proposal():
         for c in va["ontology_candidates"]:
             rel_add.append({"name": c["name"], "from": c["from_class"], "to": c["to_class"],
                             "example": f"{' · '.join(c['between'])} ({c['topic']})", "evidence": c["evidence"],
-                            "seen_in": i["id"], "note": c.get("phrase") or ""})
+                            "seen_in": i["id"], "corpus_support": c["sources"],
+                            "corpus_name": c["corpus_names"],
+                            "note": "기사 코퍼스는 같은 관계를 " + ", ".join(c["corpus_names"]) + "로 표기 — 이름 통일 필요"
+                            if c["corpus_names"] and c["name"] not in c["corpus_names"] else ""})
         for t in va["term_candidates"]:
             if t["decision"] == "term_candidate":
                 term_add.append({"term": t["term"], "guess_class": t.get("guess_class"), "evidence": t.get("evidence"),

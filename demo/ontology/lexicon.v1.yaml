@@ -1,46 +1,62 @@
-# Lexicon v1 — names and synonyms (SKOS-like: pref / alt / hidden), linked to entity uids. DUMMY fab.
-# Entity codes and names from entities.yaml are added automatically (pipeline/clean.py alias_index),
-# so list here only the other ways people write them.
+# Lexicon v1 — names and synonyms (SKOS-like: pref / alt / hidden), linked to entity uids.
 # CUSTOMIZE: add your domain terms. `context` words raise the score when they appear nearby
-# (used by pipeline/resolve.py to tell FAB-A EQ-017 from FAB-B EQ-017).
+# (used by pipeline/resolve.py to tell "삼성" Electronics from "삼성" SDI).
 version: 1.0.0
 terms:
-  # --- fabs
-  - {ref: "Fab:FAB-A", pref: FAB-A, alt: [A동, A팹, FAB A], hidden: []}
-  - {ref: "Fab:FAB-B", pref: FAB-B, alt: [B동, B팹, FAB B], hidden: []}
-  # --- equipment (the business key is FAB + code)
-  - {ref: "Equipment:FAB-A/EQ-017", pref: FAB-A/EQ-017, alt: [FAB-A EQ-017, A동 17호기, A동 EQ-017, SN-A017], hidden: []}
-  - {ref: "Equipment:FAB-B/EQ-017", pref: FAB-B/EQ-017, alt: [FAB-B EQ-017, B동 17호기, B동 EQ-017, SN-B017], hidden: []}
-  - {ref: "Equipment:FAB-A/EQ-018", pref: FAB-A/EQ-018, alt: [FAB-A EQ-018, A동 18호기], hidden: []}
-  - {ref: "Equipment:FAB-A/EQ-022", pref: FAB-A/EQ-022, alt: [FAB-A EQ-022, A동 22호기], hidden: []}
-  - {ref: "Equipment:FAB-B/EQ-031", pref: FAB-B/EQ-031, alt: [FAB-B EQ-031, B동 31호기], hidden: []}
-  # ambiguous short forms: the same code is reused in each fab -> resolve.py must use context
-  - {ref: "Equipment:FAB-A/EQ-017", pref: FAB-A/EQ-017, alt: [EQ-017, 17호기], hidden: [], ambiguous: true,
-     context: [A동, FAB-A, A팹, SN-A017]}
-  - {ref: "Equipment:FAB-B/EQ-017", pref: FAB-B/EQ-017, alt: [EQ-017, 17호기], hidden: [], ambiguous: true,
-     context: [B동, FAB-B, B팹, SN-B017]}
-  # --- equipment models / vendors
-  - {ref: "EquipmentModel:ETCH-X300", pref: ETCH-X300, alt: [ETCH X300, X300], hidden: []}
-  - {ref: "EquipmentModel:CVD-P200", pref: CVD-P200, alt: [CVD P200], hidden: []}
-  - {ref: "EquipmentModel:CMP-M300", pref: CMP-M300, alt: [CMP M300], hidden: []}
-  - {ref: "Vendor:V-HANBIT", pref: 한빛이큅, alt: [한빛], hidden: []}
-  - {ref: "Vendor:V-ORION", pref: Orion Process Tools, alt: [오라이온, Orion], hidden: []}
-  # --- part types
-  - {ref: "PartType:PT-V42", pref: PT-V42, alt: [P/T V-42, PT V42, PTV42, 압력센서 V42, V42 압력센서], hidden: []}
-  - {ref: "PartType:TV-08", pref: TV-08, alt: [스로틀 밸브, 스로틀밸브, throttle valve, TV08], hidden: []}
-  - {ref: "PartType:RF-GEN-13", pref: RF-GEN-13, alt: [RF 제너레이터, RF제너레이터, RF 발생기, RF GEN], hidden: []}
-  - {ref: "PartType:ESC-300", pref: ESC-300, alt: [정전척, ESC], hidden: []}
-  - {ref: "PartType:FR-ETCH", pref: FR-ETCH, alt: [포커스 링, 포커스링], hidden: []}
-  - {ref: "PartType:TMP-21", pref: TMP-21, alt: [터보펌프, 터보 펌프, TMP], hidden: []}
-  - {ref: "PartType:MFC-07", pref: MFC-07, alt: [MFC, 질량유량제어기], hidden: []}
-  - {ref: "PartType:PAD-CMP", pref: PAD-CMP, alt: [연마 패드, CMP 패드], hidden: []}
-  # --- failure modes
-  - {ref: "FailureMode:FM-PT-DRIFT", pref: PT-V42 열화, alt: [압력센서 열화, PT-V42 드리프트, 압력센서 드리프트, P/T V-42 열화], hidden: []}
-  - {ref: "FailureMode:FM-TV-STICK", pref: 스로틀 밸브 고착, alt: [밸브 고착, TV-08 고착], hidden: []}
-  - {ref: "FailureMode:FM-RF-REFL", pref: RF 반사전력 증가, alt: [반사전력 증가, 반사파 증가], hidden: []}
-  - {ref: "FailureMode:FM-ESC-LEAK", pref: 정전척 헬륨 누설, alt: [He 누설, 헬륨 누설], hidden: []}
-  - {ref: "FailureMode:FM-TMP-VIB", pref: 터보펌프 진동, alt: [TMP 진동], hidden: []}
-  # --- alarms
-  - {ref: "Alarm:ALM-312", pref: ALM-312, alt: [알람 312, 알람 312번, 312번 알람, ALM312], hidden: []}
-  - {ref: "Alarm:ALM-205", pref: ALM-205, alt: [알람 205, 알람 205번, ALM205], hidden: []}
-  - {ref: "Alarm:ALM-118", pref: ALM-118, alt: [알람 118, 알람 118번, ALM118], hidden: []}
+  # --- companies
+  - {ref: "Company:nvidia", pref: NVIDIA, alt: [엔비디아, Nvidia, 엔비디어], hidden: [NVDA]}
+  - {ref: "Company:tsmc", pref: TSMC, alt: [대만 TSMC, 티에스엠씨, Taiwan Semiconductor], hidden: []}
+  - {ref: "Company:sk-hynix", pref: SK hynix, alt: [SK하이닉스, 하이닉스, SK 하이닉스], hidden: [hynix],
+     context: [메모리, HBM, D램, DRAM, 낸드]}
+  - {ref: "Company:sk-inc", pref: SK Inc., alt: [SK㈜, SK 주식회사, SK지주], hidden: [],
+     context: [지주, 투자, 배당]}
+  - {ref: "Company:samsung-elec", pref: Samsung Electronics, alt: [삼성전자, Samsung], hidden: [],
+     context: [메모리, HBM, D램, DRAM, 파운드리]}
+  - {ref: "Company:samsung-sdi", pref: Samsung SDI, alt: [삼성SDI, 삼성 SDI], hidden: [],
+     context: [배터리, 전지, 이차전지, 전기차]}
+  - {ref: "Company:micron", pref: Micron, alt: [마이크론, Micron Technology], hidden: []}
+  # ambiguous short forms: listed on several terms on purpose -> resolve.py must use context
+  - {ref: "Company:samsung-elec", pref: Samsung Electronics, alt: [삼성], hidden: [], ambiguous: true,
+     context: [메모리, HBM, D램, DRAM, 파운드리]}
+  - {ref: "Company:samsung-sdi", pref: Samsung SDI, alt: [삼성], hidden: [], ambiguous: true,
+     context: [배터리, 전지, 이차전지, 전기차]}
+  - {ref: "Company:sk-hynix", pref: SK hynix, alt: [SK], hidden: [], ambiguous: true,
+     context: [메모리, HBM, D램, DRAM]}
+  - {ref: "Company:sk-inc", pref: SK Inc., alt: [SK], hidden: [], ambiguous: true,
+     context: [지주, 투자, 배당]}
+  # --- products
+  - {ref: "Product:nvidia-b200", pref: B200, alt: [블랙웰 B200, Blackwell B200, 블랙웰, Blackwell], hidden: []}
+  - {ref: "Product:nvidia-h200", pref: H200, alt: [H200 GPU], hidden: []}
+  - {ref: "Product:nvidia-h20", pref: H20, alt: [H20 GPU], hidden: []}
+  - {ref: "Product:skh-hbm3e-8h", pref: SK hynix HBM3E 8단, alt: [하이닉스 HBM3E], hidden: []}
+  - {ref: "Product:mu-hbm3e-8h", pref: Micron HBM3E 24GB 8단, alt: [마이크론 HBM3E], hidden: []}
+  - {ref: "Product:sec-hbm3e-12h", pref: Samsung HBM3E 12H 36GB, alt: [삼성 HBM3E 12단, 삼성 12단], hidden: []}
+  # --- technologies
+  - {ref: "Technology:hbm3e", pref: HBM3E, alt: [HBM3e, HBM 3E], hidden: []}
+  - {ref: "Technology:hbm4", pref: HBM4, alt: [HBM 4], hidden: []}
+  - {ref: "Technology:tsmc-4np", pref: TSMC 4NP, alt: [4NP], hidden: []}
+  - {ref: "Technology:cowos-l", pref: CoWoS-L, alt: [CoWoS L], hidden: []}
+  - {ref: "Technology:cowos-s", pref: CoWoS-S, alt: [CoWoS S], hidden: []}
+  # --- policy / countries
+  - {ref: "Policy:us-export-ai-chips", pref: 미국 첨단 AI 칩 수출 통제, alt: [수출 통제, 수출 규제], hidden: []}
+  - {ref: "Country:us", pref: 미국, alt: [US, USA], hidden: []}
+  - {ref: "Country:kr", pref: 한국, alt: [KR, 대한민국], hidden: []}
+  - {ref: "Country:tw", pref: 대만, alt: [TW, Taiwan], hidden: []}
+  # --- baseline-only entities (wider industry context; not in the extraction prompt)
+  - {ref: "Country:cn", pref: 중국, alt: [CN, China], hidden: []}
+  - {ref: "Company:amd", pref: AMD, alt: [에이엠디, Advanced Micro Devices], hidden: []}
+  - {ref: "Company:intel", pref: Intel, alt: [인텔], hidden: []}
+  - {ref: "Product:nvidia-h100", pref: H100, alt: [H100 GPU], hidden: []}
+  - {ref: "Product:nvidia-a100", pref: A100, alt: [A100 GPU], hidden: []}
+  - {ref: "Product:nvidia-a800", pref: A800, alt: [], hidden: []}
+  - {ref: "Product:nvidia-h800", pref: H800, alt: [], hidden: []}
+  - {ref: "Product:nvidia-gb200", pref: GB200 NVL72, alt: [GB200], hidden: []}
+  - {ref: "Product:nvidia-grace", pref: Grace CPU, alt: [그레이스 CPU], hidden: []}
+  - {ref: "Product:nvidia-rubin", pref: Rubin, alt: [루빈, Rubin GPU], hidden: []}
+  - {ref: "Product:skh-hbm3", pref: SK hynix HBM3, alt: [하이닉스 HBM3], hidden: []}
+  - {ref: "Product:skh-hbm4-12h", pref: SK hynix HBM4 12단, alt: [하이닉스 HBM4 12단], hidden: []}
+  - {ref: "Product:amd-mi300x", pref: Instinct MI300X, alt: [MI300X], hidden: []}
+  - {ref: "Product:amd-mi300a", pref: Instinct MI300A, alt: [MI300A], hidden: []}
+  - {ref: "Technology:hbm3", pref: HBM3, alt: [HBM 3], hidden: []}
+  - {ref: "Technology:tsmc-4n", pref: TSMC 4N, alt: [4N], hidden: []}
+  - {ref: "Policy:us-chips-act", pref: 미국 CHIPS 법 보조금, alt: [CHIPS 법, CHIPS Act, 반도체 지원법], hidden: []}

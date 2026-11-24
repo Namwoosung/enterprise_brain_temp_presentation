@@ -1,0 +1,252 @@
+# News corpus — articles the team has scraped. Summaries are written in our own words
+# (article text is NOT copied). Each article lists the facts it supports.
+#   baseline: true   -> used by reset.py to build the baseline KG (run 0)
+#   baseline: false  -> "newly scraped"; used only by validate.py to check claims (원천 대조)
+# Fact forms:
+#   {s: <uid>, p: <RELATION>, o: <uid>, props: {...}}
+#   {s: <uid>, p: PRODUCT_STATUS, value: <enum>}
+#   {s: <uid>, p: <RELATION>, o_new: {class: Product, name: ...}}   # entity not in the master yet
+#   {s: <uid>, p: <NOT_IN_ONTOLOGY>, o: <uid>}                       # kept for checking, never loaded
+# CUSTOMIZE: replace with your own source documents.
+articles:
+  - id: A01
+    baseline: true
+    date: 2023-08-21
+    publisher: SK hynix Newsroom
+    url: https://news.skhynix.com/sk-hynix-develops-worlds-best-performing-hbm3e/
+    title: SK hynix, HBM3E 개발 완료·고객사 샘플 공급
+    summary: SK hynix가 HBM3E 초기 개발을 마치고 성능 검증용 샘플을 고객사에 공급하기 시작했다. 양산은 2024년 상반기 계획.
+    facts:
+      - {s: "Company:sk-hynix", p: DEVELOPS, o: "Product:skh-hbm3e-8h"}
+      - {s: "Product:skh-hbm3e-8h", p: USES_TECH, o: "Technology:hbm3e"}
+      - {s: "Product:skh-hbm3e-8h", p: PRODUCT_STATUS, value: sampling}
+  - id: A02
+    baseline: true
+    date: 2024-02-26
+    publisher: HPCwire (Micron 보도자료)
+    url: https://www.hpcwire.com/aiwire/2024/02/26/micron-commences-volume-production-of-hbm3e-solution-to-accelerate-the-growth-of-ai/
+    title: Micron, HBM3E 24GB 8단 양산 시작 — NVIDIA H200 탑재
+    summary: Micron이 HBM3E 24GB 8단 제품의 양산을 시작했고, 2024년 2분기 출하 예정인 NVIDIA H200에 들어간다고 밝혔다.
+    facts:
+      - {s: "Company:micron", p: DEVELOPS, o: "Product:mu-hbm3e-8h"}
+      - {s: "Product:mu-hbm3e-8h", p: USES_TECH, o: "Technology:hbm3e"}
+      - {s: "Product:mu-hbm3e-8h", p: PRODUCT_STATUS, value: mass_production}
+      - {s: "Product:nvidia-h200", p: USES_COMPONENT, o: "Product:mu-hbm3e-8h"}
+      - {s: "Company:micron", p: SUPPLIES, o: "Company:nvidia", props: {item: HBM3E}}
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-h200"}
+  - id: A03
+    baseline: true
+    date: 2024-02-27
+    publisher: Samsung Newsroom
+    url: https://news.samsung.com/global/samsung-develops-industry-first-36gb-hbm3e-12h-dram
+    title: Samsung, 36GB HBM3E 12H 개발 — 고객 샘플 공급
+    summary: Samsung Electronics가 12단 36GB HBM3E를 개발해 고객 샘플 공급을 시작했고, 양산은 2024년 상반기로 계획했다.
+    facts:
+      - {s: "Company:samsung-elec", p: DEVELOPS, o: "Product:sec-hbm3e-12h"}
+      - {s: "Product:sec-hbm3e-12h", p: USES_TECH, o: "Technology:hbm3e"}
+      - {s: "Product:sec-hbm3e-12h", p: PRODUCT_STATUS, value: sampling}
+  - id: A04
+    baseline: true
+    date: 2024-03-18
+    publisher: NVIDIA Newsroom
+    url: https://nvidianews.nvidia.com/news/nvidia-blackwell-platform-arrives-to-power-a-new-era-of-computing
+    title: NVIDIA, Blackwell 플랫폼 발표 — TSMC 맞춤 4NP 공정
+    summary: NVIDIA가 GTC 2024에서 Blackwell 플랫폼을 발표했다. 두 개의 다이를 10TB/s로 연결하고 TSMC 맞춤 4NP 공정으로 만든다. 랙 단위 시스템 GB200 NVL72는 Grace CPU와 Blackwell GPU를 묶는다.
+    facts:
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-b200"}
+      - {s: "Product:nvidia-b200", p: PRODUCT_STATUS, value: announced}
+      - {s: "Product:nvidia-b200", p: FABRICATED_BY, o: "Company:tsmc", props: {process: 4NP}}
+      - {s: "Product:nvidia-b200", p: USES_TECH, o: "Technology:tsmc-4np"}
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-gb200"}
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-grace"}
+      - {s: "Product:nvidia-gb200", p: USES_COMPONENT, o: "Product:nvidia-b200"}
+      - {s: "Product:nvidia-gb200", p: USES_COMPONENT, o: "Product:nvidia-grace"}
+  - id: A05
+    baseline: true
+    date: 2025-04-15
+    publisher: TechCrunch
+    url: https://techcrunch.com/2025/04/15/us-government-imposes-license-requirement-on-nvidia-h20-exports
+    title: 미국 정부, NVIDIA H20 중국 수출에 허가 요건 부과
+    summary: 중국 시장용으로 사양을 맞춘 NVIDIA H20도 미국 수출 통제 대상이 되어 수출에 허가가 필요해졌다.
+    facts:
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-h20"}
+      - {s: "Product:nvidia-h20", p: RESTRICTED_BY, o: "Policy:us-export-ai-chips"}
+  - id: A06
+    baseline: true
+    date: 2022-03-22
+    publisher: NVIDIA Newsroom
+    url: https://nvidianews.nvidia.com/news/nvidia-announces-hopper-architecture-the-next-generation-of-accelerated-computing
+    title: NVIDIA, Hopper 아키텍처와 H100 발표 — TSMC 4N 공정 · HBM3
+    summary: NVIDIA가 GTC 2022에서 Hopper 아키텍처 기반 H100 GPU를 발표했다. TSMC 4N 공정으로 만들고, HBM3를 쓰는 첫 GPU라고 밝혔다.
+    facts:
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-h100"}
+      - {s: "Product:nvidia-h100", p: FABRICATED_BY, o: "Company:tsmc", props: {process: 4N}}
+      - {s: "Product:nvidia-h100", p: USES_TECH, o: "Technology:tsmc-4n"}
+      - {s: "Product:nvidia-h100", p: USES_TECH, o: "Technology:hbm3"}
+  - id: A07
+    baseline: true
+    date: 2022-06-08
+    publisher: SK hynix Newsroom
+    url: https://news.skhynix.com/en/sk-hynix-to-supply-industrys-first-hbm3-dram-to-nvidia/
+    title: SK hynix, HBM3 양산 시작 — NVIDIA H100에 공급
+    summary: SK hynix가 HBM3 양산을 시작했고, 이 제품이 NVIDIA H100과 결합된다고 밝혔다. 개발 발표 7개월 만의 양산이다.
+    facts:
+      - {s: "Company:sk-hynix", p: DEVELOPS, o: "Product:skh-hbm3"}
+      - {s: "Product:skh-hbm3", p: USES_TECH, o: "Technology:hbm3"}
+      - {s: "Product:skh-hbm3", p: PRODUCT_STATUS, value: mass_production}
+      - {s: "Product:nvidia-h100", p: USES_COMPONENT, o: "Product:skh-hbm3"}
+      - {s: "Company:sk-hynix", p: SUPPLIES, o: "Company:nvidia", props: {item: HBM3}}
+  - id: A08
+    baseline: true
+    date: 2022-08-31
+    publisher: SEC 8-K (NVIDIA 공시)
+    url: https://www.sec.gov/Archives/edgar/data/1045810/000104581022000146/nvda-20220826.htm
+    title: 미국 정부, NVIDIA A100·H100 중국 수출에 허가 요건 부과
+    summary: NVIDIA는 미국 정부가 A100과 H100(및 같은 성능대 제품)을 중국·러시아로 수출할 때 허가를 받도록 새 요건을 부과했다고 공시했다.
+    facts:
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-a100"}
+      - {s: "Product:nvidia-a100", p: RESTRICTED_BY, o: "Policy:us-export-ai-chips"}
+      - {s: "Product:nvidia-h100", p: RESTRICTED_BY, o: "Policy:us-export-ai-chips"}
+  - id: A09
+    baseline: true
+    date: 2023-10-17
+    publisher: Reuters
+    url: https://www.reuters.com/technology/nvidia-may-be-forced-shift-out-some-countries-after-new-us-export-curbs-2023-10-17/
+    title: 미국 수출 통제 확대 — 중국용 A800·H800도 막혀
+    summary: 미국이 AI 칩 수출 통제를 넓히면서, NVIDIA가 중국 시장용으로 사양을 낮춰 내놓았던 A800과 H800도 수출 제한 대상이 됐다.
+    facts:
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-a800"}
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-h800"}
+      - {s: "Product:nvidia-a800", p: RESTRICTED_BY, o: "Policy:us-export-ai-chips"}
+      - {s: "Product:nvidia-h800", p: RESTRICTED_BY, o: "Policy:us-export-ai-chips"}
+  - id: A10
+    baseline: true
+    date: 2023-11-13
+    publisher: NVIDIA Newsroom
+    url: https://nvidianews.nvidia.com/news/nvidia-supercharges-hopper-the-worlds-leading-ai-computing-platform
+    title: NVIDIA, H200 발표 — HBM3E를 쓰는 첫 GPU
+    summary: NVIDIA가 SC23에서 H200을 발표했다. HBM3E를 처음 쓰는 GPU로 141GB 메모리를 갖추며, 탑재 시스템은 2024년 2분기 출하 예정이다.
+    facts:
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-h200"}
+      - {s: "Product:nvidia-h200", p: USES_TECH, o: "Technology:hbm3e"}
+  - id: A11
+    baseline: true
+    date: 2023-12-06
+    publisher: AMD Newsroom
+    url: https://www.amd.com/en/newsroom/press-releases/2023-12-6-amd-delivers-leadership-portfolio-of-data-center-a.html
+    title: AMD, Instinct MI300X·MI300A 출시 — HBM3 192GB
+    summary: AMD가 데이터센터 AI 가속기 Instinct MI300X와 APU MI300A를 내놓았다. MI300X는 HBM3 192GB를 탑재한다.
+    facts:
+      - {s: "Company:amd", p: DEVELOPS, o: "Product:amd-mi300x"}
+      - {s: "Company:amd", p: DEVELOPS, o: "Product:amd-mi300a"}
+      - {s: "Product:amd-mi300x", p: USES_TECH, o: "Technology:hbm3"}
+  - id: A12
+    baseline: true
+    date: 2024-03-20
+    publisher: NIST (미국 상무부 CHIPS)
+    url: https://www.nist.gov/news-events/news/2024/03/biden-harris-administration-announces-preliminary-terms-intel-support
+    title: 미국 상무부, Intel과 CHIPS 보조금 예비 합의 — 최대 85억 달러
+    summary: 미국 상무부가 CHIPS 법에 따라 Intel의 미국 내 공장 투자에 최대 85억 달러를 직접 지원하는 예비 조건에 합의했다.
+    facts:
+      - {s: "Company:intel", p: SUBSIDIZED_BY, o: "Policy:us-chips-act", props: {amount: 최대 85억 달러, stage: 예비 합의}}
+  - id: A13
+    baseline: true
+    date: 2024-04-08
+    publisher: NIST (미국 상무부 CHIPS)
+    url: https://www.nist.gov/news-events/news/2024/04/biden-harris-administration-announces-preliminary-terms-tsmc-expanded
+    title: 미국 상무부, TSMC Arizona에 최대 66억 달러 지원 예비 합의
+    summary: 미국 상무부가 TSMC의 애리조나 공장 확장에 CHIPS 법 보조금 최대 66억 달러를 지원하는 예비 조건에 합의했다.
+    facts:
+      - {s: "Company:tsmc", p: SUBSIDIZED_BY, o: "Policy:us-chips-act", props: {amount: 최대 66억 달러, stage: 예비 합의}}
+  - id: A14
+    baseline: true
+    date: 2024-04-15
+    publisher: NIST (미국 상무부 CHIPS)
+    url: https://www.nist.gov/news-events/news/2024/04/biden-harris-administration-announces-preliminary-terms-samsung-electronics
+    title: 미국 상무부, Samsung Electronics 텍사스 투자에 최대 64억 달러 예비 합의
+    summary: 미국 상무부가 Samsung Electronics의 텍사스 중부 반도체 투자에 CHIPS 법 보조금 최대 64억 달러를 지원하는 예비 조건에 합의했다.
+    facts:
+      - {s: "Company:samsung-elec", p: SUBSIDIZED_BY, o: "Policy:us-chips-act", props: {amount: 최대 64억 달러, stage: 예비 합의}}
+  - id: A15
+    baseline: true
+    date: 2024-04-25
+    publisher: NIST (미국 상무부 CHIPS)
+    url: https://www.nist.gov/news-events/news/2024/04/biden-harris-administration-announces-preliminary-terms-micron-onshore
+    title: 미국 상무부, Micron 메모리 공장에 최대 61억 달러 예비 합의
+    summary: 미국 상무부가 Micron의 아이다호·뉴욕 메모리 공장 건설에 CHIPS 법 보조금 최대 61억 달러를 지원하는 예비 조건에 합의했다.
+    facts:
+      - {s: "Company:micron", p: SUBSIDIZED_BY, o: "Policy:us-chips-act", props: {amount: 최대 61억 달러, stage: 예비 합의}}
+  - id: A16
+    baseline: true
+    date: 2024-06-02
+    publisher: Reuters
+    url: https://www.reuters.com/technology/nvidia-says-its-next-generation-ai-chip-platform-be-rolled-out-2026-2024-06-02/
+    title: NVIDIA, 차세대 Rubin 플랫폼 2026년 출시 예고 — HBM4 사용
+    summary: 젠슨 황 CEO가 Computex 2024 기조연설에서 Blackwell 다음 세대인 Rubin 플랫폼을 2026년에 내놓겠다고 밝혔다. Rubin GPU는 HBM4를 쓴다.
+    facts:
+      - {s: "Company:nvidia", p: DEVELOPS, o: "Product:nvidia-rubin"}
+      - {s: "Product:nvidia-rubin", p: USES_TECH, o: "Technology:hbm4"}
+      - {s: "Product:nvidia-rubin", p: PRODUCT_STATUS, value: announced}
+  - id: A17
+    baseline: true
+    date: 2024-08-06
+    publisher: NIST (미국 상무부 CHIPS)
+    url: https://www.nist.gov/news-events/news/2024/08/us-department-commerce-announces-preliminary-terms-sk-hynix-advance-us-ai-0
+    title: 미국 상무부, SK hynix 인디애나 HBM 패키징 공장에 최대 4.5억 달러 예비 합의
+    summary: 미국 상무부가 SK hynix의 인디애나주 AI 메모리(HBM) 첨단 패키징 공장에 CHIPS 법 보조금 최대 4억 5천만 달러를 지원하는 예비 조건에 합의했다.
+    facts:
+      - {s: "Company:sk-hynix", p: SUBSIDIZED_BY, o: "Policy:us-chips-act", props: {amount: 최대 4.5억 달러, stage: 예비 합의}}
+  - id: A18
+    baseline: true
+    date: 2025-03-19
+    publisher: SK hynix Newsroom
+    url: https://news.skhynix.com/en/sk-hynix-ships-world-first-12-layer-hbm4-samples-to-customers/
+    title: SK hynix, 12단 HBM4 샘플 세계 첫 공급
+    summary: SK hynix가 12단 HBM4 샘플을 주요 고객사에 예정보다 일찍 공급했고, 하반기 안에 양산 준비를 마칠 계획이라고 밝혔다.
+    facts:
+      - {s: "Company:sk-hynix", p: DEVELOPS, o: "Product:skh-hbm4-12h"}
+      - {s: "Product:skh-hbm4-12h", p: USES_TECH, o: "Technology:hbm4"}
+      - {s: "Product:skh-hbm4-12h", p: PRODUCT_STATUS, value: sampling}
+
+  # ---- newly scraped (not in the baseline graph; used to check claims)
+  - id: B01
+    baseline: false
+    date: 2024-03-19
+    publisher: Reuters (AOL 전재) · AnandTech
+    url: https://www.aol.com/news/nvidia-supplier-sk-hynix-begins-032216688.html
+    url2: https://anandtech.com/show/21311
+    title: NVIDIA 공급사 SK hynix, HBM3E 양산 시작
+    summary: SK hynix가 HBM3E 양산을 시작해 3월 말 고객 출하를 시작한다. 로이터는 SK hynix를 NVIDIA의 HBM 공급사로 보도했다.
+    facts:
+      - {s: "Product:skh-hbm3e-8h", p: PRODUCT_STATUS, value: mass_production}
+      - {s: "Company:sk-hynix", p: SUPPLIES, o: "Company:nvidia", props: {item: HBM3E}}
+  - id: B02
+    baseline: false
+    date: 2024-09-26
+    publisher: The Register
+    url: https://www.theregister.com/2024/09/26/sk_hynix_hbm3e_production/
+    title: SK hynix, 12단 36GB HBM3E 세계 첫 양산
+    summary: SK hynix가 12단 36GB HBM3E 양산을 시작했고 연내 고객에게 공급할 계획이라고 밝혔다.
+    facts:
+      - {s: "Company:sk-hynix", p: DEVELOPS, o_new: {class: Product, name: SK hynix HBM3E 12단 36GB}}
+      - {s: {new: SK hynix HBM3E 12단 36GB}, p: PRODUCT_STATUS, value: mass_production}
+      - {s: {new: SK hynix HBM3E 12단 36GB}, p: USES_TECH, o: "Technology:hbm3e"}
+  - id: B03
+    baseline: false
+    date: 2024-04-19
+    publisher: TechPowerUp
+    url: https://www.techpowerup.com/321689/sk-hynix-collaborates-with-tsmc-on-hbm4-chip-packaging
+    title: SK hynix–TSMC, HBM4 협력 MOU — 베이스 다이에 TSMC 로직 공정
+    summary: SK hynix와 TSMC가 HBM4 개발 협력 MOU를 맺었다. HBM4 베이스 다이에 TSMC 로직 공정을 쓰고 CoWoS 통합도 함께 개선한다.
+    facts:
+      - {s: "Company:sk-hynix", p: PARTNERS_WITH, o: "Company:tsmc", props: {topic: HBM4 베이스 다이}}
+  - id: B04
+    baseline: false
+    date: 2025-01-16
+    publisher: Taipei Times · The Star (Reuters)
+    url: https://taipeitimes.com/News/biz/archives/2025/01/17/2003830329
+    url2: https://www.thestar.com.my/tech/tech-news/2025/01/16/nvidia-ceo-says-its-advanced-packaging-technology-needs-are-changing
+    title: 젠슨 황 "Blackwell은 주로 CoWoS-L" — Hopper는 CoWoS-S 유지
+    summary: NVIDIA CEO가 대만 행사에서 Blackwell은 주로 CoWoS-L 패키징을 쓰고, Hopper는 CoWoS-S를 계속 쓴다고 말했다.
+    facts:
+      - {s: "Product:nvidia-b200", p: USES_TECH, o: "Technology:cowos-l"}

@@ -7,7 +7,7 @@
 | 기계마다 다른 값 | `.env` |
 | 입력 목록 · 임계값 · 정제 패턴 · CQ · Browser 질의 | `config/demo.yaml` |
 | 온톨로지 · 용어 사전 · STT 발음 표 | `ontology/` |
-| 마스터 개체 · 기준 자료 · 입력 문서 | `data/` |
+| 마스터 개체 · 기사 코퍼스 · 입력 문서 | `data/` |
 
 코드에서 `CUSTOMIZE`를 검색하면 도메인에 묶인 곳이 나옵니다.
 
@@ -51,7 +51,7 @@ pip install --no-index --find-links wheels -r requirements.txt
 | 바꿀 것 | 파일 | 주의 |
 |---|---|---|
 | 마스터 개체 | `data/sources/entities.yaml` | `class`는 온톨로지 클래스, `code`는 uid가 됨 |
-| 기준 자료 | `data/sources/reference_docs.yaml` | 시스템 export(`official: cmms · alarm_log`)와 승인 문서. 기준 KG를 만들고 검증의 대조 기준이 됨 |
+| 기사 코퍼스 | `data/sources/news_corpus.yaml` | `baseline: true`는 기준 KG에, `false`는 검증 대조용 |
 | 입력 문서 | `data/inputs/*.md` + `config/demo.yaml`의 `inputs` | 형식은 `DATA_SPEC.md` |
 | 별칭 · 동음 단어 | `ontology/lexicon.v1.yaml` | 동음 별칭은 `ambiguous: true` + `context` 단어 |
 | STT 발음 | `ontology/phonetic.yaml` | 일반 음절과 겹치면 `after` 규칙(앞 단어 조건)으로 |
@@ -67,7 +67,7 @@ pip install --no-index --find-links wheels -r requirements.txt
 
    셋 모두 이 파일에서 자동으로 만들어집니다.
 2. `pipeline/extract.py`의 `SYSTEM` 규칙 예시(공급·양산 등)를 새 도메인 예시로 바꿉니다. `# CUSTOMIZE`
-3. `pipeline/official.py`와 온톨로지 관계의 `official`을 새 도메인의 기준 시스템으로 바꿉니다. 지금은 CMMS(작업)와 알람 로그(알람)이고, 예컨대 ERP · MES 표가 될 수 있습니다. CMMS 열 매핑은 `config/demo.yaml`의 `cmms_mapping`입니다.
+3. `pipeline/validate.py`의 "원천 대조"를 새 도메인의 원천으로 바꿉니다. 지금은 기사 코퍼스이고, 예컨대 CMMS·ERP 표가 될 수 있습니다.
 4. `config/demo.yaml`의 `validate.high_risk`, `cleaning` 패턴, `views`의 Cypher를 맞춥니다.
 5. `pipeline/resolve.py`의 "회사 이름으로 제품 지칭" 규칙(`_company_for_product`)은 이 도메인 전용입니다. 필요 없으면 지우거나 바꿉니다.
 
