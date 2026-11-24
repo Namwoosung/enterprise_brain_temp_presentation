@@ -467,3 +467,20 @@
 - **키워드**: record/replay, VCR 테스트, 결정적 재현, prompt hash, LLM_MODE=replay
 - **반영 후보**: 반영함(demo 웹 · README · AGENTS · docs, presentation P11 노트)
 - **출처**: demo/pipeline/llm.py (`chat`) · vcrpy 문서(record/replay 개념)
+
+## Q024. 데모의 기준 KG는 어떻게 만들었나? 임의로 만든 것인가, 파이프라인(스키마 → LLM 추출 → 연결)을 거친 것인가? `[ ]`
+- **질문**: 기준 KG는 어떻게 만든 건가? 그냥 임의로 만든 건가, 아니면 스키마를 만들고 LLM으로 그래프를 추출하고 연결하는 과정을 다 거친 건가?
+- **답 요약**:
+  - **파이프라인을 거치지 않았다.** 데모를 만들 때 Claude가 손으로 정리한 YAML을 그대로 Cypher로 넣었다(`scripts/reset.py` → `pipeline/graph.py`의 `load_baseline`). LLM 추출, 개체 연결, 검증은 기준 KG에 쓰이지 않았다.
+  - 손으로 쓴 것:
+    - 온톨로지 `ontology/ontology.v1.yaml`: 클래스 7개, 관계 12개
+    - 마스터 개체 `data/sources/entities.yaml`: 39개(회사 · 제품 · 기술 · 국가 · 정책)
+    - 기사 코퍼스 `data/sources/news_corpus.yaml`: 22건. 그중 기준 KG용 18건에 사실 54개를 uid 형태(`{s, p, o}`)로 직접 적음. 나머지 4건은 검증 단계의 대조용
+    - 용어 사전 · 발음 표
+  - 기사는 실제 공개 기사(URL 있음)를 읽고 요약 · 사실을 직접 정리한 것이다. 만들 때 URL이 열리는지는 확인했지만, 사실 하나하나를 전문가가 검토한 것은 아니므로 틀린 부분이 있을 수 있다.
+  - 파이프라인을 실제로 거치는 것은 **메일 1건과 회의록 STT 1건뿐**이다. 기준 KG는 "이미 확인된 지식"이라는 가정 아래 출발점으로 둔 것이다.
+  - 실제 사내에 비유하면: 기준 KG = MES · CMMS 마스터와 이미 승인된 기록을 규칙으로 옮긴 것, 새 입력 = 그 위에 들어오는 메일 · 회의록. 실제 구축에서는 기준 KG도 정형 원천은 규칙 매핑으로, 과거 문서는 같은 파이프라인(추출 · 연결 · 검증)으로 만들어야 한다.
+  - 데모의 "개발자가 한 일" 토글(개요 탭)에도 "기준 그래프는 개발자가 쓴 마스터 · 기사 YAML을 직접 짠 Cypher로 넣은 것"이라고 나온다.
+- **키워드**: baseline KG, seed data, curated master, bootstrap, 규칙 매핑, 파이프라인 적용 범위
+- **반영 후보**: 데모 개요 화면 · README에 "기준 KG는 손으로 정리한 데이터, 파이프라인은 새 입력 2건에만" 한 줄 명시. 덱 11장 노트에 같은 설명 검토(덱은 설비 시나리오).
+- **출처**: demo/scripts/reset.py · demo/pipeline/graph.py(`load_baseline`) · demo/data/sources/*.yaml
