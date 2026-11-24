@@ -15,7 +15,8 @@
   header .sync{margin-left:auto;font:14px var(--mono);color:#9EACC8}
   .convey{font-size:20px;color:#9EACC8;margin:14px 0 22px}
   h2{font:600 15px var(--mono);color:#9EACC8;text-transform:uppercase;letter-spacing:.06em;margin:26px 0 8px}
-  .script p{font-size:22px;line-height:1.7;margin:0 0 12px}
+  .script p{font-size:22px;line-height:1.7;margin:0 0 12px;color:#9EACC8}
+  .script p.cur{color:#EFF4FF}
   .md{font-size:17px;line-height:1.6;color:#C9D3E8;white-space:pre-wrap}
   .help{font:14px var(--mono);color:#9EACC8;margin-top:30px}
 </style>
@@ -30,29 +31,39 @@
   <h2>출처</h2><div class="md" id="src"></div>
   <div class="help">← → 로 장 이동 · 발표 창과 같은 브라우저에서 열면 현재 장을 따라갑니다(지원되는 경우)</div>
 </main>
-<script src="js/data/notes.js"></script>
+<!-- 노트는 각 슬라이드 파일(js/slides/<id>.js)의 notes에 있습니다. 순서는 js/deck.js의 ORDER. -->
+<script src="js/engine/helpers.js"></script>
+<script src="js/engine/render.js"></script>
+<script src="js/engine/helpers-v3.js"></script>
+<script src="js/deck.js"></script>
 <script>
 (function () {
-  const ids = Object.keys(window.NOTES).sort();
+  const slides = DECK.ordered();
+  const ids = slides.map(s => s.id);
   let i = 0, step = 1;
-  const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const esc = s => String(s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const clean = s => esc(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
+  const plain = s => String(s || '').replace(/<[^>]+>/g, '');
   function show() {
-    const n = NOTES[ids[i]];
-    document.getElementById('id').textContent = ids[i];
-    document.getElementById('title').textContent = n.title;
-    document.getElementById('sync').textContent = `스텝 ${step}`;
+    const d = slides[i], n = d.notes || {};
+    const script = Array.isArray(n.script) ? n.script : String(n.script || '').split('\n');
+    document.getElementById('id').textContent = `${String(i + 1).padStart(2, '0')} · ${d.id}`;
+    document.getElementById('title').textContent = plain(d.title);
+    document.getElementById('sync').textContent = `스텝 ${step} / ${d.steps}`;
     document.getElementById('convey').innerHTML = clean(n.convey);
-    document.getElementById('script').innerHTML = n.script.split('\n').map(l => `<p>${clean(l)}</p>`).join('');
+    let k = 1;
+    document.getElementById('script').innerHTML = script.map((l, j) => {
+      if (j > 0 && String(l).startsWith('(→)')) k++;
+      return `<p class="${k === step ? 'cur' : ''}">${clean(l)}</p>`;
+    }).join('');
     document.getElementById('discuss').innerHTML = clean(n.discuss);
     document.getElementById('concept').innerHTML = clean(n.concept);
     document.getElementById('src').innerHTML = clean(n.src);
-    scrollTo(0, 0);
   }
-  function go(id, s) { const k = ids.indexOf(id); if (k >= 0) { i = k; step = s || 1; show(); } }
+  function go(id, s) { const k = ids.indexOf(id); if (k >= 0) { if (k !== i) scrollTo(0, 0); i = k; step = s || 1; show(); } }
   document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight') { i = Math.min(ids.length - 1, i + 1); step = 1; show(); }
-    if (e.key === 'ArrowLeft') { i = Math.max(0, i - 1); step = 1; show(); }
+    if (e.key === 'ArrowRight') { i = Math.min(ids.length - 1, i + 1); step = 1; scrollTo(0, 0); show(); }
+    if (e.key === 'ArrowLeft') { i = Math.max(0, i - 1); step = 1; scrollTo(0, 0); show(); }
   });
   try { const ch = new BroadcastChannel('eb-deck'); ch.onmessage = e => go(e.data.id, e.data.step); } catch (e) {}
   addEventListener('storage', e => { if (e.key === 'eb-deck-pos') try { const v = JSON.parse(e.newValue); go(v.id, v.step); } catch (x) {} });

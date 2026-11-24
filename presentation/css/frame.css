@@ -18,3 +18,4 @@ html,body{margin:0;height:100%;background:#05070F;overflow:hidden;font-family:va
 .dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
 .dots i.on{background:var(--mint)}
 .body{position:absolute;inset:0}
+.badge-err:not(:empty){display:inline-block;margin-right:12px;background:var(--red,#FB7185);color:#111;border-radius:999px;padding:7px 14px;font:700 15px/1 var(--sans);cursor:help}

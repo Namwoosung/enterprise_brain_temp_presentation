@@ -12,6 +12,11 @@
 | [`presentation/`](presentation/) | 발표자료(31장, HTML). 빌드 없이 브라우저로 엽니다 |
 | [`demo/`](demo/) | 온톨로지 구축 데모(Python + Neo4j, 반도체 · AI 뉴스 KG). 설치와 사용법은 [demo/README.md](demo/README.md) |
 
+## 고치는 방법
+AI 에이전트(또는 사람)가 고칠 때는 [AGENTS.md](AGENTS.md)부터 읽습니다. 발표자료는 [presentation/AGENTS.md](presentation/AGENTS.md), 데모는 [demo/AGENTS.md](demo/AGENTS.md)에 작업별 방법과 검사 명령이 있습니다.
+- 발표자료: 한 장 = 한 파일(`presentation/js/slides/<id>.js`, 발표자 노트 포함), 순서는 `presentation/js/deck.js`의 `ORDER`. 검사 `python presentation/tools/check_deck.py`
+- 데모: 데이터는 `demo/data/`, `demo/ontology/`의 YAML. 검사 `python scripts/check_data.py` (demo 폴더에서)
+
 ## 발표자료 보기
 - `presentation/index.html`을 브라우저로 엽니다. 서버가 필요 없습니다.
 - 넘기기: `→` `↓` `Space` / 뒤로: `←` `↑`. 주소 끝에 `#P11-1`처럼 붙이면 해당 장의 해당 단계로 바로 갑니다.

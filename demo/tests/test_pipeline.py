@@ -63,3 +63,37 @@ def test_corpus_support_and_reverse_direction():
     assert not hits and [a["id"] for a in rev] == ["A02"]
     hits, _ = validate.supporting_articles("PRODUCT_STATUS", "Product:skh-hbm3e-8h", "", None, None, "mass_production")
     assert [a["id"] for a in hits] == ["B01"]
+
+
+# ---- open-weight model output (vLLM): wrappers and format drift must not break the pipeline
+def test_parse_json_handles_think_fences_and_chatter():
+    from pipeline import llm
+    raw = '<think>먼저 {생각}</think>\n```json\n{"facts": [{"evidence": "a } b"}]}\n```'
+    assert llm.parse_json(raw) == {"facts": [{"evidence": "a } b"}]}
+    assert llm.parse_json('네, 결과입니다: {"facts": []} 끝') == {"facts": []}
+
+
+def test_normalize_output_coerces_shapes():
+    from pipeline import extract
+    out = extract.normalize_output({"facts": [
+        {"subject": "하이닉스", "predicate": "supplies", "object": "엔비디아", "props": "HBM3E", "certainty": "maybe"},
+        {"predicate": "DEVELOPS"},                       # no subject -> dropped
+        "not a dict"], "unknown_terms": {"term": "x"}})
+    f = out["facts"][0]
+    assert f["predicate"] == "SUPPLIES" and f["props"] == {} and f["certainty"] == "suspected"
+    assert out["dropped_facts"] == 1 and out["unknown_terms"] == [{"term": "x"}]
+    assert out["out_of_ontology"] == [] and out["unresolved_references"] == []
+
+
+def test_data_files_are_consistent():
+    """Same checks as scripts/check_data.py (without the recording comparison)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import check_data as cd
+    cd.errors.clear()
+    cd.check_ontology()
+    uids = cd.check_entities()
+    cd.check_corpus(uids)
+    cd.check_lexicon(uids)
+    cd.check_inputs()
+    cd.check_cq(uids)
+    assert cd.errors == []

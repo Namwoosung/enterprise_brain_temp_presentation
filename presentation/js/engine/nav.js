@@ -49,7 +49,7 @@
     stage.style.transform = `translate(-50%,-50%) scale(${sc})`;
   }
   addEventListener('resize', fit);
-  const m = location.hash.match(/^#(P\d\d)-(\d+)$/);
+  const m = location.hash.match(/^#([A-Za-z0-9_]+)-(\d+)$/);
   if (m) {
     const i = slides.findIndex(x => x.id === m[1]);
     if (i >= 0) { cur = i; step = Math.max(0, Math.min(+m[2], slides[i].steps) - 1); }

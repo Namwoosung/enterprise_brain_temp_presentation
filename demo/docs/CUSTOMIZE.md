@@ -44,7 +44,9 @@ pip install --no-index --find-links wheels -r requirements.txt
 ## 2. LLM 바꾸기
 - `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`만 바꿉니다. `/v1/models`와 `/v1/chat/completions`를 제공하는 OpenAI 호환 서버면 됩니다(vLLM, 사내 게이트웨이 등).
 - JSON 출력(`response_format: json_object`)을 지원하지 않는 서버라면 `pipeline/llm.py`의 `json_mode` 처리를 바꿉니다. vLLM은 이 형식을 지원합니다.
-- 모델이 바뀌면 추출 결과도 달라집니다. 화면에서 "실시간 호출"로 한 번 실행하거나 `.env`에 `LLM_MODE=live`를 두고 `run_all.py`를 실행해 **녹화본(`runs/recorded/*.json`)을 새로 만든 뒤** 발표에는 재생 모드를 씁니다.
+- 연결 확인: `python scripts/check_llm.py` (서버 응답 · 모델 이름 · JSON 응답을 확인).
+- 오픈웨이트 모델(vLLM)용 설정: `LLM_EXTRA_BODY`(요청에 합칠 JSON, 예: Qwen3 계열의 생각 모드 끄기 `{"chat_template_kwargs": {"enable_thinking": false}}`), `LLM_JSON_MODE`(response_format 사용 여부), `LLM_TIMEOUT`(초). 응답의 `<think>` 블록 · 코드 울타리 · 앞뒤 설명은 파서가 걷어 냅니다.
+- 모델이 바뀌면 추출 결과도 달라집니다. 화면에서 "실시간 호출"로 한 번 실행하거나 `python scripts/run_all.py --live`로 실행해 **녹화본(`runs/recorded/*.json`)을 새로 만든 뒤** 발표에는 재생 모드를 씁니다.
 - 프롬프트는 `pipeline/extract.py`의 `SYSTEM`입니다. 고치면 `PROMPT_VERSION`을 올립니다. 화면은 녹화 이후 프롬프트가 바뀌었는지 경고합니다.
 
 ## 3. 데이터 바꾸기 (같은 도메인)

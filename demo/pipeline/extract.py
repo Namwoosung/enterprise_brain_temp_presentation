@@ -6,7 +6,6 @@ LLM part  : relations / status changes, restricted to the ontology's predicates.
             out_of_ontology / unknown_terms so it can become an ontology change proposal.
 All output is a *candidate*; nothing is trusted until validate.py checks it.
 """
-import json
 
 from .common import ontology, entities, read_artifact, write_artifact
 from . import llm
@@ -79,7 +78,8 @@ SYSTEM = """너는 반도체·AI 뉴스 지식 그래프에 넣을 사실 후보
 12. "A 것도 X에 들어간다"는 X가 완제품이다 → USES_COMPONENT subject="X", object="A 것"."""
 
 
-def run(input_id):
+def build_messages(input_id):
+    """System + user messages for one input (needs the clean step's artifact)."""
     cl = read_artifact(input_id, "clean")
     chunk_lines = []
     for c in cl["chunks"]:
@@ -90,12 +90,48 @@ def run(input_id):
             + "\n".join(chunk_lines))
     messages = [{"role": "system", "content": SYSTEM.format(schema=schema_text(), known=known_entities_text())},
                 {"role": "user", "content": user}]
+    return cl, user, messages
+
+
+def _list_of_dicts(v):
+    if isinstance(v, dict):
+        v = [v]
+    return [x for x in (v or []) if isinstance(x, dict)] if isinstance(v, list) else []
+
+
+def normalize_output(out):
+    """Smaller models drift from the format: wrong container types, missing keys, "null" strings.
+    Coerce to the shape later steps expect; anything unusable is dropped (and counted)."""
+    if not isinstance(out, dict):
+        out = {"facts": out} if isinstance(out, list) else {}
+    facts, dropped = [], 0
+    for f in _list_of_dicts(out.get("facts")):
+        f = {k: (None if v in ("null", "None", "") else v) for k, v in f.items()}
+        if not f.get("subject") or not f.get("predicate"):
+            dropped += 1
+            continue
+        for k in ("subject", "object", "chunk_id", "evidence", "new_entity_name", "subject_class",
+                  "object_class", "value", "certainty", "predicate"):
+            if f.get(k) is not None and not isinstance(f[k], str):
+                f[k] = str(f[k])
+        f["predicate"] = f["predicate"].strip().upper()
+        f["props"] = f.get("props") if isinstance(f.get("props"), dict) else {}
+        if f.get("certainty") not in ("confirmed", "suspected"):
+            f["certainty"] = "suspected"
+        facts.append(f)
+    return {"facts": facts, "dropped_facts": dropped,
+            **{k: _list_of_dicts(out.get(k)) for k in ("out_of_ontology", "unknown_terms", "unresolved_references")}}
+
+
+def run(input_id):
+    cl, user, messages = build_messages(input_id)
     res = llm.chat(f"{input_id}_extract", messages, json_mode=True)
     try:
-        out = json.loads(res["content"])
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f"LLM did not return JSON: {e}") from e
-    facts = out.get("facts", [])
+        out = normalize_output(llm.parse_json(res["content"]))
+    except ValueError as e:
+        raise RuntimeError(f"LLM did not return JSON ({e}). Try again, set LLM_EXTRA_BODY to turn off "
+                           "thinking, or use a larger model.") from e
+    facts = out["facts"]
     for i, f in enumerate(facts, 1):
         f["fact_id"] = f"F{i:02d}"
         f["method"] = "LLM"
@@ -106,7 +142,8 @@ def run(input_id):
         "prompt": {"system": messages[0]["content"], "user": user},
         "rule_mentions": len(cl["mentions"]),
         "facts": facts,
-        "out_of_ontology": out.get("out_of_ontology", []),
-        "unknown_terms": out.get("unknown_terms", []),
-        "unresolved_references": out.get("unresolved_references", []),
+        "dropped_facts": out["dropped_facts"],
+        "out_of_ontology": out["out_of_ontology"],
+        "unknown_terms": out["unknown_terms"],
+        "unresolved_references": out["unresolved_references"],
     })

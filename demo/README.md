@@ -43,6 +43,7 @@ Copy-Item .env.example .env
 브라우저에서 http://localhost:8800 을 엽니다.
 
 - 웹 없이 확인하려면: `.\.venv\Scripts\python scripts\run_all.py`
+- 데이터 검사: `.\.venv\Scripts\python scripts\check_data.py` · LLM 연결 확인: `.\.venv\Scripts\python scripts\check_llm.py`
 - 테스트: `.\.venv\Scripts\python -m pip install -r requirements-dev.txt` 후 `.\.venv\Scripts\python -m pytest -q`
 
 ## 3. 화면 사용법
@@ -72,6 +73,7 @@ Copy-Item .env.example .env
 ## 5. 문서
 | 문서 | 내용 |
 |---|---|
+| [AGENTS.md](AGENTS.md) | **데이터 · 더미 문서 바꾸는 방법, 검사 명령, LLM(vLLM) 연결 · 다시 녹화** |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 구조, 단계별 입출력, 그래프 모델 |
 | [docs/CUSTOMIZE.md](docs/CUSTOMIZE.md) | **다른 로컬 · 다른 데이터로 재구성하는 방법** |
 | [docs/DATA_SPEC.md](docs/DATA_SPEC.md) | 입력 파일과 데이터 파일 형식 |

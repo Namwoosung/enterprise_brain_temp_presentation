@@ -1,6 +1,9 @@
 """Run the whole pipeline from the command line (no web needed).
 
-Usage:  python scripts/run_all.py [--no-reset] [mail stt ...]
+Usage:  python scripts/run_all.py [--no-reset] [--live | --replay] [mail stt ...]
+
+  --live    call the LLM (LLM_BASE_URL) and overwrite runs/recorded/*.json  (= LLM_MODE=live)
+  --replay  never call the LLM; use the recordings                         (= LLM_MODE=replay)
 """
 import json
 import sys
@@ -20,6 +23,11 @@ def main(argv):
             stream.reconfigure(encoding="utf-8", errors="replace")
         except Exception:
             pass
+    import os
+    if "--live" in argv:
+        os.environ["LLM_MODE"] = "live"
+    elif "--replay" in argv:
+        os.environ["LLM_MODE"] = "replay"
     inputs = [a for a in argv if not a.startswith("--")] or [i["id"] for i in config()["inputs"]]
     if "--no-reset" not in argv:
         print("reset   ", reset_mod.reset())

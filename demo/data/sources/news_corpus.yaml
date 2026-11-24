@@ -6,6 +6,9 @@
 #   {s: <uid>, p: <RELATION>, o: <uid>, props: {...}}
 #   {s: <uid>, p: PRODUCT_STATUS, value: <enum>}
 #   {s: <uid>, p: <RELATION>, o_new: {class: Product, name: ...}}   # entity not in the master yet
+#   {s: {new: <name>}, p: <RELATION>, o: <uid>}                     # subject not in the master yet
+#   (o_new / s: {new: ...} / relations outside the ontology: only in baseline: false articles)
+# Check after editing:  python scripts/check_data.py
 #   {s: <uid>, p: <NOT_IN_ONTOLOGY>, o: <uid>}                       # kept for checking, never loaded
 # CUSTOMIZE: replace with your own source documents.
 articles:
