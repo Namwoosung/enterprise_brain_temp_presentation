@@ -484,3 +484,26 @@
 - **키워드**: baseline KG, seed data, curated master, bootstrap, 규칙 매핑, 파이프라인 적용 범위
 - **반영 후보**: 데모 개요 화면 · README에 "기준 KG는 손으로 정리한 데이터, 파이프라인은 새 입력 2건에만" 한 줄 명시. 덱 11장 노트에 같은 설명 검토(덱은 설비 시나리오).
 - **출처**: demo/scripts/reset.py · demo/pipeline/graph.py(`load_baseline`) · demo/data/sources/*.yaml
+
+## Q025. RDF · YAML · OWL · 속성 그래프는 어떻게 구분되나? 덱은 어떻게 나눴고, 일반적인 KG 구축은 어떻게 하나? `[ ]`
+- **질문**: 온톨로지 구성에서 RDF, YAML, OWL, 속성 그래프가 명확히 구분이 안 된다. 발표자료는 어떻게 구분해 놓았고, 각 층마다 정확히 어떤 내용을 담고 예시는 무엇인가? 일반적인 KG 구축은 어떻게 하나? 지배적인 일반론이 없다면 주로 쓰이는 방법론과 예시 · 특징을 쉽게 설명해 달라.
+- **답 요약**:
+  - 넷은 같은 층의 선택지가 아니다. **RDF · 속성 그래프 = 데이터 모델**(데이터를 담는 모양), **OWL = 온톨로지 언어**(RDF 위에서 개념 · 관계를 논리적으로 정의), **YAML = 파일 문법**(무엇을 적을지는 정해져 있지 않음). 여기에 SKOS(용어 체계), SHACL(검증 규칙)이 표준으로 따로 있다.
+  - 덱의 층 구분:
+    - ① 정의(TBox, 기준) = YAML + Git(자체 형식): 클래스 · 키 · 필수값 · 허용값 · 관계 방향 · 개수 · 기준 시스템 · 예시 · 검토 기준. 용어 사전은 SKOS 구조를 흉내 낸 YAML.
+    - ② 생성물 = JSON Schema · Pydantic · DB 제약 · (선택) SHACL.
+    - ③ 데이터(ABox) = 속성 그래프(데모는 Neo4j).
+    - ④ 원본 · 원장 = 파일 · Parquet · (나중에) RDB.
+    - ⑤ 교환(선택) = RDF/OWL 내보내기.
+  - 같은 예("WO-1042는 FAB-A EQ-017에서 수행")를 YAML · JSON Schema · Cypher · OWL(Turtle) · RDF · SHACL로 각각 적어 비교했다. 핵심 차이: RDF는 관계에 속성을 바로 못 붙이고(사실 노드 · RDF-star 필요), OWL은 개방 세계라 "없음"을 오류로 안 잡는다(SHACL · 코드가 잡음).
+  - 일반적인 KG 구축은 하나로 정해져 있지 않고 주로 다섯 갈래다:
+    - A 시맨틱 웹(OWL + RDF 저장소 + SPARQL): 표준 · 추론에 강함. 예: Wikidata, SNOMED, FIBO
+    - B 속성 그래프(Neo4j 등 + Cypher): 개발 속도 · 탐색에 강함. 예: 사기 탐지, 추천
+    - C 혼합(정의는 OWL/LinkML/YAML, 데이터는 속성 그래프): 이 덱의 방식
+    - D 가상 KG · OBDA(온톨로지 + 매핑, 데이터는 기존 RDB): 예: Ontop, 시맨틱 레이어, Auto Ontology
+    - E LLM 추출(GraphRAG 계열): 문서에서 빠르게, 정확성은 약함. 예: MS GraphRAG, Neo4j LLM Graph Builder
+  - 덱은 C를 기본으로, 정형 원천은 D처럼 참조로 잇고, 문서는 E의 추출을 스키마 · 검증으로 묶는 구성이다.
+  - 상세 표 · 예시 코드는 `study/ontology_formats.md`.
+- **키워드**: RDF, RDFS, OWL 2, SKOS, SHACL, Turtle, JSON-LD, 속성 그래프(LPG), GQL, Cypher, SPARQL, LinkML, RDF-star, open/closed world, OBDA, R2RML, GraphRAG
+- **반영 후보**: 9장 또는 23장 앞에 "층 구분" 그림 한 장(정의 YAML → 생성물 → 속성 그래프 → RDF 내보내기) 추가 검토. 2장 concept의 TBox/ABox 설명과 연결.
+- **출처**: W3C RDF 1.1 · OWL 2 Primer · SKOS Reference · SHACL · R2RML · ISO/IEC 39075 GQL · Hogan et al. (2021) · LinkML 문서 · Ontop 문서 · Edge et al. (2024) · Palantir Foundry Ontology 문서
