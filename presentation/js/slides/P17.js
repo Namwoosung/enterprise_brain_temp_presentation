@@ -29,7 +29,7 @@ node_types:
 relation_types:
   ON_EQUIPMENT: {from: MaintenanceWork, to: Equipment}
   SUSPECTED_CAUSE: {from: Equipment, to: FailureMode}`, 's15')}`, 'data-v="2"');
-      const O = [['LLM 출력 JSON 스키마', '타입은 enum · 필수 필드는 required'], ['검증 코드 (Pydantic)', '적재 전 형식 · 허용 패턴 검사'], ['Neo4j 제약', '키 · 유니크 (에디션별 차이)'], ['SHACL (선택)', 'RDF/표준 연계가 필요할 때']];
+      const O = [['LLM 출력 JSON 스키마', '타입은 enum · 필수 필드는 required'], ['검증 코드 (Pydantic)', '적재 전 형식 · 허용 패턴 검사'], ['DB 제약', '키 · 유니크 (DB · 에디션마다 다름)'], ['SHACL (선택)', 'RDF/표준 연계가 필요할 때']];
       let ln = '';
       O.forEach((o, i) => {
         const y = 240 + i * 108;
@@ -49,7 +49,7 @@ relation_types:
       script: [
         "스키마 없이 문서 세 건에서 추출하면, 같은 센서가 Sensor, PressureSensor, 부품이라는 세 가지 이름으로, 관계도 CAUSED, 원인, RELATED_TO로 나옵니다. 이러면 조회 쿼리를 쓸 수 없습니다.",
         "(→) 그래서 온톨로지를 YAML로 먼저 정합니다. 노드 타입과 키, 필수 속성, 동의어, 관계의 방향까지.",
-        "(→) 이 YAML 하나에서 LLM 출력 JSON 스키마, 적재 전 검증 코드, Neo4j 제약, 필요하면 SHACL까지 만들어 냅니다. 정의가 한 곳에 있으니 서로 어긋나지 않습니다.",
+        "(→) 이 YAML 하나에서 LLM 출력 JSON 스키마, 적재 전 검증 코드, DB 제약, 필요하면 SHACL까지 만들어 냅니다. 정의가 한 곳에 있으니 서로 어긋나지 않습니다. 각 블록이 무엇을 만드는지는 다음 장에서 보겠습니다.",
         "(→) 프레임워크도 이 방향입니다. Neo4j SimpleKGPipeline에는 FREE, EXTRACTED, 사용자 정의 스키마 모드가 있는데, 기본값인 EXTRACTED는 실행마다 스키마가 달라질 수 있어 운영에서는 사용자 정의가 낫습니다. 열린 추출은 발굴용, 적재는 닫힌 스키마로.",
       ],
       discuss: "",

@@ -1,11 +1,11 @@
-/* P19 · 추출 ③ 정형은 규칙으로, 문서는 LLM으로 — 둘 다 후보입니다
+/* P19 · 추출 ④ 정형은 규칙으로, 문서는 LLM으로 뽑고 둘 다 후보로 둡니다
    편집 안내: presentation/AGENTS.md · 검사: python tools/check_deck.py */
 (function () {
   const { div, card, t, chip, mk, tag, node, pill, svg, path, ul, cb, q, tbl, code, box, esc } = H;
 
   DECK.register({
     id: 'P19', steps: 4, section: '4 · 추출', ctxSub: '03 추출', badge: '데모 실제 결과',
-    title: '추출 ③ 정형은 규칙으로, 문서는 LLM으로 — 둘 다 후보입니다',
+    title: '추출 ④ 정형은 규칙으로, 문서는 LLM으로 뽑고 둘 다 후보로 둡니다',
     takeaway: '만드는 방법은 달라도 결과는 같은 모양(후보 + 근거 + 판정 전)으로 모읍니다',
     src: '자체 설계 · 매핑 규칙 예: R2RML 계열',
     html() {
@@ -22,7 +22,7 @@
         <tr><td class="k mono">stt F06</td><td>extract-fab-v1</td><td class="mono s15">DOC-M201#c06</td></tr></table>
         <p class="s17" style="margin-top:8px">18개 모두 <b class="c-orange">pending</b> → 검증 단계로 · LLM은 gpt-4.1</p>`, 'data-v="3"', 'panel');
       s += svg(path('M1226,338 C1240,338 1240,420 1256,420', 'purple', { draw: true, a: 'data-v="3"' }) + path('M1226,570 C1240,570 1240,500 1256,500', 'blue', { draw: true, a: 'data-v="3"' }));
-      const W = [['정형 행', '프로그램', '정답이 정해져 있음'], ['템플릿 문서 · 표', '프로그램 + LLM', '양식 부분은 규칙'], ['자유 서술', 'LLM → 후보', '확정 권한 없음'], ['온톨로지 확장', 'LLM 제안 → 사람', '의미는 조직의 합의'], ['암묵지', '사람', '질문 큐 (27장)']];
+      const W = [['정형 행', '프로그램', '정답이 정해져 있음'], ['템플릿 문서 · 표', '프로그램 + LLM', '양식 부분은 규칙'], ['자유 서술', 'LLM → 후보', '확정 권한 없음'], ['온톨로지 확장', 'LLM 제안 → 사람', '의미는 조직의 합의'], ['암묵지', '사람', '질문 큐 ({{P27}}장)']];
       W.forEach((w, i) => { s += card(134 + i * 334, 712, 318, 240, 'gray', `<h5>${w[0]}</h5><div class="s22 b" style="margin-top:6px">${w[1]}</div><p style="margin-top:6px">${w[2]}</p>`, 'data-v="4"'); });
       return s;
     },

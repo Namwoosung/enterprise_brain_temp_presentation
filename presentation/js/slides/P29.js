@@ -30,7 +30,7 @@
       script: [
         "최근 도구 여섯 개를 봤습니다. NVIDIA Auto Ontology는 RDB에서 온톨로지를 만들고 사람이 인증해야 쓰게 합니다. Microsoft GraphRAG는 커뮤니티 요약 계층과 증분 갱신이 있고, Neo4j GraphRAG Python은 스키마 모드와 기본 ER이 있습니다.",
         "Graphiti는 사실마다 유효 기간을 두고 지우지 않고 무효화합니다. graphify는 변경될 때마다 그래프를 다시 만들고 사람이 읽는 리포트를 남깁니다. Airflow 3는 이벤트 기반 오케스트레이션입니다.",
-        "(→) 중요한 건 통째로 쓰는 게 아니라 각자 해결한 한 가지를 가져오는 겁니다.",
+        "(→) 이 도구들을 통째로 들여오기보다, 각 도구가 잘 푼 한 가지씩을 우리 단계에 가져다 씁니다.",
         "(→) 수집은 Airflow, 추출은 Neo4j 라이브러리 부품, 검증은 Auto Ontology의 인증 단계, 적재는 Graphiti의 유효 기간, 운영은 graphify의 리포트 방식과 GraphRAG의 증분 갱신.",
       ],
       discuss: "",

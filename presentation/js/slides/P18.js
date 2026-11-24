@@ -1,11 +1,11 @@
-/* P18 · 추출 ② "추정"을 "확정"으로 바꾸지 않습니다
+/* P18 · 추출 ③ "추정"을 "확정"으로 바꾸지 않습니다
    편집 안내: presentation/AGENTS.md · 검사: python tools/check_deck.py */
 (function () {
   const { div, card, t, chip, mk, tag, node, pill, svg, path, ul, cb, q, tbl, code, box, esc } = H;
 
   DECK.register({
     id: 'P18', steps: 5, section: '4 · 추출', ctxSub: '03 추출', badge: '데모 회의록 STT',
-    title: '추출 ② "추정"을 "확정"으로 바꾸지 않습니다',
+    title: '추출 ③ "추정"을 "확정"으로 바꾸지 않습니다',
     takeaway: '확실성 · 시점 · 근거 위치를 후보의 필드로 남겨야 조회 결과가 원문보다 단정적이지 않습니다',
     src: '사실성(factuality) · 헤지(hedging) 연구 주제 · 예시는 자체 설계',
     html() {

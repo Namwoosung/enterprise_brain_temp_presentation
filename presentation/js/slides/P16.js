@@ -6,7 +6,7 @@
   DECK.register({
     id: 'P16', steps: 5, section: '4 · 정제', ctxSub: '02 정제', badge: '개념 · 공개 자료',
     title: '정제 ② Entity resolution: 같은 대상을 같은 ID로',
-    takeaway: '이름이 같다는 건 약한 증거입니다 — 애매하면 합치지 않고 후보로 남깁니다',
+    takeaway: '이름이 같다는 건 약한 증거입니다. 애매하면 합치지 않고 후보로 남깁니다',
     src: 'Fellegi & Sunter (1969) · Splink (UK MoJ) · Neo4j GraphRAG Python KG Builder 문서',
     html() {
       const P = [['정규화', '코드 · 이름 형태 맞추기'], ['블로킹', '비교할 쌍 줄이기'], ['쌍 비교', '필드별 유사도'], ['판정', '규칙 → 확률 → 사람'], ['대표 ID', '클러스터 · 대표 레코드']];

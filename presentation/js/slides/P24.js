@@ -18,7 +18,7 @@
       let s = '';
       C.forEach((c, i) => { s += card(134 + i * 418, 240, 398, 430, c[1], `<div class="mono s16 c-${c[1]}">0${i + 1}</div><h4 class="s26">${c[0]}</h4>${c[2]}`, `data-v="${i + 1}"`); });
       const cause = [['온톨로지에 개념 없음', '온톨로지 PR'], ['추출 누락', '프롬프트 · 예시'], ['ER 오류', '규칙 · 임계값'], ['수집 누락', '커넥터'], ['쿼리 문제', '발표 3']];
-      let inner = `<h5>CQ가 실패하면 — 원인을 나눠야 고칠 곳이 보인다</h5><div class="row" style="gap:12px;margin-top:10px">`;
+      let inner = `<h5>CQ가 실패하면 원인부터 나눈다</h5><div class="row" style="gap:12px;margin-top:10px">`;
       cause.forEach(c => { inner += `<div class="card" style="flex:1;padding:10px 12px"><div class="s18 b">${c[0]}</div><div class="s16 c-mint">→ ${c[1]}</div></div>`; });
       inner += '</div><p class="s18 c-fg" style="margin-top:12px"><b class="c-orange">함께 고민할 점</b> · CQ 목록은 누가 쓰나? 현업 질문을 어떻게 모을까?</p>';
       s += card(134, 700, 1652, 252, 'gray', inner, 'data-v="5"', 'panel');

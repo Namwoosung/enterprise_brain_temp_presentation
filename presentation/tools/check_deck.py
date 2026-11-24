@@ -8,6 +8,7 @@ What it checks (exit code 1 if any ERROR):
   - steps: N is present; step numbers used in data-v / data-c / data-t / data-tr are <= N
   - notes.script exists and the number of paragraphs starting with '(→)' == steps - 1
   - quotes / brackets / backticks are balanced (cheap syntax sanity check)
+  - page references written as {{P27}} point to a slide in ORDER
   - if Node.js is installed: `node --check` on every slide file (real syntax check)
 Step numbers built with ${...} at runtime cannot be checked here; open the deck in a browser:
 a slide with a problem shows a red '⚠' badge at the top right (hover for details).
@@ -210,6 +211,12 @@ def main():
             err(f"ORDER의 '{sid}': js/slides/{sid}.js 파일이 없음")
             continue
         check_slide(sid, p)
+    for sid in order:  # {{P27}} page references must point to a slide in ORDER
+        p = SLIDES / f"{sid}.js"
+        if p.exists():
+            for ref in sorted(set(re.findall(r"\{\{([A-Za-z0-9_]+)\}\}", p.read_text(encoding="utf-8")))):
+                if ref not in seen:
+                    err(f"{p.name}: 쪽 참조 {{{{{ref}}}}} 의 슬라이드가 ORDER에 없음")
     for p in sorted(SLIDES.glob("*.js")):
         if p.stem not in seen and not p.stem.startswith("_"):
             warn(f"{p.name}: ORDER에 없어서 화면에 나오지 않음")

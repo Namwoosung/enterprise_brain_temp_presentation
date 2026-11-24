@@ -6,7 +6,7 @@
   DECK.register({
     id: 'P26', steps: 5, section: '5 · 운영', ctxSub: '운영', badge: '설계 가이드 · 공개 문서',
     title: '버전 관리: 온톨로지는 Git으로, KG는 main / develop으로',
-    takeaway: '다섯 가지 버전을 고정하면 같은 KG를 다시 만들 수 있고, 그게 그래프 브랜치를 대신합니다',
+    takeaway: '다섯 가지 버전을 고정하면 같은 KG를 다시 만들 수 있어서, 그래프 DB에 브랜치 기능이 없어도 됩니다',
     src: 'Neo4j Operations Manual (Community는 표준 DB 1개) · TerminusDB · 자체 설계',
     html() {
       let s = card(134, 240, 1652, 112, 'mint', `<div class="row" style="flex-wrap:wrap;gap:10px"><span class="s30 b mono">KG = f(</span>${chip('원본 버전', 'src lg sans')}${chip('온톨로지 버전', 'prog lg sans')}${chip('파이프라인 버전', 'prog lg sans')}${chip('모델 · 프롬프트 버전', 'llm lg sans')}${chip('승인 기록', 'hold lg sans')}<span class="s30 b mono">)</span></div>`, 'data-v="1"', 'fill-mint');
@@ -25,7 +25,7 @@
       s += tbl(134, 712, 800, ['온톨로지 변경', '그래프 처리'], [
         ['추가 (MINOR)', '새 타입이 필요한 원본만 재추출'], ['이름 변경', '마이그레이션 스크립트 · 재추출 불필요'],
         ['분할', '기존 인스턴스 재분류 — 규칙 또는 재추출 + 검토'], ['삭제', '인스턴스 무효화 · 깨지는 CQ 확인']], { a: 'data-v="4"', cls: 'tight', widths: ['28%', '72%'] });
-      s += card(970, 712, 816, 240, 'orange', `<h5>Neo4j에서 현실적으로</h5>${ul(['데이터 브랜치 기능이 없다', 'Community는 표준 DB 1개 → main / develop은 인스턴스 분리', '또는 "원본 + 버전"으로 언제든 재구축', '네이티브 branch · merge가 필요하면 TerminusDB 같은 git식 그래프 DB'], 's18')}
+      s += card(970, 712, 816, 240, 'orange', `<h5>그래프 DB에서 현실적으로 (예: Neo4j)</h5>${ul(['데이터 브랜치 기능이 없다', 'Community는 표준 DB 1개 → main / develop은 인스턴스 분리', '또는 "원본 + 버전"으로 언제든 재구축', '네이티브 branch · merge가 필요하면 TerminusDB 같은 git식 그래프 DB'], 's18')}
         <p class="s17 c-fg" style="margin-top:8px"><b class="c-orange">함께 고민할 점</b> · 온톨로지 변경 승인권자는 현업? 데이터팀?</p>`, 'data-v="5"', 'fill-orange');
       return s;
     },

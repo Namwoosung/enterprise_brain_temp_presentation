@@ -42,13 +42,13 @@
   const ids = slides.map(s => s.id);
   let i = 0, step = 1;
   const esc = s => String(s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  const clean = s => esc(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
+  const clean = s => esc(DECK.refs(s)).replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
   const plain = s => String(s || '').replace(/<[^>]+>/g, '');
   function show() {
     const d = slides[i], n = d.notes || {};
     const script = Array.isArray(n.script) ? n.script : String(n.script || '').split('\n');
     document.getElementById('id').textContent = `${String(i + 1).padStart(2, '0')} · ${d.id}`;
-    document.getElementById('title').textContent = plain(d.title);
+    document.getElementById('title').textContent = plain(DECK.refs(d.title));
     document.getElementById('sync').textContent = `스텝 ${step} / ${d.steps}`;
     document.getElementById('convey').innerHTML = clean(n.convey);
     let k = 1;

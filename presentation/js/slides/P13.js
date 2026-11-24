@@ -7,7 +7,7 @@
     id: 'P13', steps: 5, section: '4 · 수집', ctxSub: '01 수집', badge: '설계 가이드',
     title: '수집 ① 소스별 커넥터와 트리거를 고릅니다',
     takeaway: '소스마다 "언제, 무엇이 바뀌었는지" 아는 방법이 다르고, 그게 수집 방식을 정합니다',
-    src: 'CDC 예: Debezium · 오케스트레이션 예: Airflow 3 (25장)',
+    src: 'CDC 예: Debezium · 오케스트레이션 예: Airflow 3 ({{P25}}장)',
     html() {
       const head = ['소스', '수집 방식', '증분 기준', '주의할 점'];
       const R = [

@@ -44,7 +44,7 @@
         "(→) 그래서 사실을 덮어쓰지 않고, 언제부터 언제까지 유효한지와 어느 문서 어느 버전에서 왔는지를 남겨야 합니다.",
       ],
       discuss: "",
-      concept: "유효 시간(valid time)과 기록 시간(transaction time)을 나누는 bi-temporal 모델 → 26장.",
+      concept: "유효 시간(valid time)과 기록 시간(transaction time)을 나누는 bi-temporal 모델 → {{P26}}장.",
       src: "교육용 가상 사례 · 수치는 설명용",
     },
   });

@@ -56,6 +56,18 @@
     return p;
   }
 
+  /* {{P27}} in any slide text -> current page number of slide P27 ("27"), so references survive reordering */
+  DECK.pageOf = id => {
+    const i = (DECK.slides.length ? DECK.slides : DECK.ordered()).findIndex(s => s.id === id);
+    return i < 0 ? null : String(i + 1).padStart(2, '0');
+  };
+  DECK.refs = (str, owner) => String(str == null ? '' : str).replace(/\{\{([A-Za-z0-9_]+)\}\}/g, (m, id) => {
+    const pg = DECK.pageOf(id);
+    if (pg) return pg;
+    (window.DECK_PROBLEMS = window.DECK_PROBLEMS || []).push(`${owner || '?'}: 참조 {{${id}}} 의 슬라이드가 ORDER에 없음`);
+    return '??';
+  });
+
   const R = window.Render = {
     build(stage) {
       const cfg = window.DECK_CONFIG || {};
@@ -70,7 +82,7 @@
         const ctx = d.ctx || ((cfg.ctx || '') + (d.ctxSub ? ' · ' + d.ctxSub : ''));
         let body = '';
         try { body = d.html(); } catch (e) { body = ''; d.renderError = String(e); }
-        sec.innerHTML = `
+        sec.innerHTML = DECK.refs(`
           <div class="topbar"><span class="ctx">${ctx}</span><span><span class="badge-err"></span><span class="badge-sim">${d.badge || cfg.badge || '설계 예상값'}</span></span></div>
           <h1 class="title">${d.title}</h1>
           <p class="takeaway"><span class="k">Key takeaway</span><span>${d.takeaway || ''}</span></p>
@@ -79,7 +91,7 @@
             <span class="pg">${String(i + 1).padStart(2, '0')} / ${total}</span><span class="sec">${d.section || ''}</span>
             <span class="src">${d.src || ''}</span>
             <span class="step"><span class="stepnum"></span><span class="dots"></span></span>
-          </div>`;
+          </div>`, d.id);
         stage.appendChild(sec);
         const probs = problemsOf(d, sec);
         if (d.renderError) probs.push('html() 실행 오류: ' + d.renderError);
