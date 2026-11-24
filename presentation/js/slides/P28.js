@@ -30,7 +30,7 @@
         "(→) 실제로는 섞어 씁니다. 업무 질문으로 골격, 데이터로 매핑, LLM으로 확장 후보, 사람이 인증.",
       ],
       discuss: "",
-      concept: "Ontology Development 101(Noy & McGuinness 2001), METHONTOLOGY, NeOn(재사용 시나리오), LOT(애자일·산업), ODP(설계 패턴), BFO·IOF Core(상위 온톨로지). 표준은 '검토 후보'로만 언급.",
+      concept: "Ontology Development 101(Noy & McGuinness 2001), METHONTOLOGY, NeOn(재사용 시나리오), LOT(애자일·산업), ODP(설계 패턴), BFO·IOF Core(상위 온톨로지). 표준은 '검토 후보'로만 언급. 도메인을 다 알지 못해도 된다: 개발자는 모델링(용어 수집 · 후보 그리기), 전문가는 판정(예/아니오 질문). 업무 질문 5~10개로 범위를 정하고 반복해서 넓힌다.",
       src: "공개 방법론 정리",
     },
   });

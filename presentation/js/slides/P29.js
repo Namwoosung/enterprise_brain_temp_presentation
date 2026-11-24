@@ -34,7 +34,7 @@
         "(→) 수집은 Airflow, 추출은 Neo4j 라이브러리 부품, 검증은 Auto Ontology의 인증 단계, 적재는 Graphiti의 유효 기간, 운영은 graphify의 리포트 방식과 GraphRAG의 증분 갱신.",
       ],
       discuss: "",
-      concept: "Auto Ontology는 비정형 문서 수집이 공개 문서에 없다. graphify는 저장소·포크가 여러 개라 인용 저장소를 하나로 정할 것.",
+      concept: "Auto Ontology는 비정형 문서 수집이 공개 문서에 없다. graphify는 저장소·포크가 여러 개라 인용 저장소를 하나로 정할 것. Auto Ontology 공식 문서는 인증이 'UI · 검색에 검토됨을 표시할 뿐 agent의 조회 방식은 바꾸지 않는다'고 적는다(게이트가 아니라 배지). LLM이 제안한 관계는 실제 조인 결과로 확인한 뒤 저장한다. 상세: study/auto_ontology.md",
       src: "각 도구 공개 문서 (2026-11 기준)",
     },
   });

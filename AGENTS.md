@@ -4,7 +4,7 @@
 
 | 폴더 | 내용 | 안내 | 고친 뒤 검사 |
 |---|---|---|---|
-| `presentation/` | 발표자료(HTML, 32장, 설비 정비 시나리오) | [presentation/AGENTS.md](presentation/AGENTS.md) | `python presentation/tools/check_deck.py` |
+| `presentation/` | 발표자료(HTML, 40장, 설비 정비 시나리오) | [presentation/AGENTS.md](presentation/AGENTS.md) | `python presentation/tools/check_deck.py` |
 | `demo/` | 온톨로지 구축 데모(Python + Neo4j, 반도체 · AI 뉴스 도메인) | [demo/AGENTS.md](demo/AGENTS.md) | `demo` 폴더에서 `python scripts/check_data.py` → `python -m pytest -q` |
 
 그 밖에 `qna_notes.md`(질문 기록, Q 번호 순)와 `study/`(학습 자료)가 있습니다. 질문에 답하면 `qna_notes.md` 끝에 다음 번호로 추가하고, 길어지면 `study/`에 문서를 만들어 링크합니다.

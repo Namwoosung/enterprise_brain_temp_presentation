@@ -41,7 +41,7 @@
         "(→) 파싱에서는 표 구조와 페이지, 문단 위치를 반드시 살려야 합니다. 나중에 근거 위치를 가리켜야 하니까요.",
       ],
       discuss: "용어 사전은 누가 소유하고 누가 고치나?",
-      concept: "SKOS: prefLabel(표준어) · altLabel(동의어) · hiddenLabel(오타·변형) · broader/narrower. 용어 사전 YAML 구조의 참고.",
+      concept: "SKOS: prefLabel(표준어) · altLabel(동의어) · hiddenLabel(오타·변형) · broader/narrower. 용어 사전 YAML 구조의 참고. 사람은 건마다 고치지 않고 사전 · 규칙을 고친다. 미연결 표현을 빈도순으로 보고 사전에 한 줄 추가하면 지난 문서와 앞으로 올 문서가 함께 해결된다(롱테일).",
       src: "Docling · Unstructured · Apache Tika",
     },
   });
