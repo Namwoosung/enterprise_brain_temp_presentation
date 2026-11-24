@@ -45,7 +45,7 @@ entities:
 ```
 `country`는 `HEADQUARTERED_IN`, `issued_by`는 `ISSUED_BY`, `targets`는 `TARGETS` 관계로 바뀝니다. 그 밖의 필드는 노드 속성이 됩니다.
 
-`prompt: false`인 개체는 기준 그래프와 용어 사전에는 들어가지만, LLM 추출 프롬프트의 "알려진 개체" 목록에서는 빠집니다. 프롬프트에는 감시 주제(HBM 공급망)에 필요한 개체만 넣어 길이를 관리합니다. 이 목록을 바꾸면 프롬프트 해시가 달라지므로 발표 전에 `LLM_MODE=live`로 다시 녹화해야 합니다. 기준 그래프만 키우려면 새 개체에 `prompt: false`를 붙이면 녹화본을 그대로 쓸 수 있습니다.
+`prompt: false`인 개체는 기준 그래프와 용어 사전에는 들어가지만, LLM 추출 프롬프트의 "알려진 개체" 목록에서는 빠집니다. 프롬프트에는 감시 주제(HBM 공급망)에 필요한 개체만 넣어 길이를 관리합니다. 이 목록을 바꾸면 프롬프트 해시가 달라지므로 발표 전에 `LLM_MODE=live`로 다시 호출해 저장해야 합니다. 기준 그래프만 키우려면 새 개체에 `prompt: false`를 붙이면 저장된 호출을 그대로 쓸 수 있습니다.
 
 관계의 `key`(온톨로지)는 관계의 정체성에 포함되는 속성입니다. 예를 들어 `SUPPLIES`는 `key: [item]`이라 SK hynix → NVIDIA `{item: HBM3}`와 `{item: HBM3E}`가 서로 다른 관계로 저장되고, 원천 대조도 품목이 같은 기사만 근거로 인정합니다.
 
@@ -82,6 +82,6 @@ terms:
 | 파일 | 내용 |
 |---|---|
 | `runs/<input>/<step>.json` | 단계 산출물 (웹이 읽음). git에 넣지 않음 |
-| `runs/recorded/<input>_extract.json` | LLM 녹화본: 요청 메시지, 응답, 모델, 시간, 프롬프트 해시. **git에 넣음** |
+| `runs/recorded/<input>_extract.json` | LLM 저장된 호출: 요청 메시지, 응답, 모델, 시간, 프롬프트 해시. **git에 넣음** |
 | `runs/cq_run0.json` | 초기화 시점의 CQ 답 |
 | `runs/ontology.v1.1.proposal.yaml` | 온톨로지 변경 제안 |

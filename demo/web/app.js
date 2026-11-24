@@ -1,6 +1,6 @@
 /* Demo UI. No build step, no libraries. Talks to server/app.py (/api/*).
    Graph pictures come from Neo4j Browser (iframe via the :8801 re-serving proxy). */
-const S = { cfg: null, tab: "overview", step: "collect", art: {}, notesOn: false };
+const S = { cfg: null, tab: "overview", step: "collect", art: {}, devOn: false, dev: null };
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const tag = (t, c = "gray") => `<span class="tag ${c}">${esc(t)}</span>`;
@@ -27,7 +27,11 @@ async function boot() {
   $("#tabs").innerHTML = tabs.map(([id, l]) => `<button data-tab="${id}">${esc(l)}</button>`).join("");
   $("#tabs").onclick = (e) => { const b = e.target.closest("button"); if (b) selectTab(b.dataset.tab); };
   initLayout();
-  $("#btn-notes").onclick = () => { S.notesOn = !S.notesOn; renderNotes(); };
+  try { S.devOn = localStorage.getItem("demo-dev") === "1"; } catch (e) { /* private mode */ }
+  $("#btn-dev").onclick = toggleDev;
+  document.addEventListener("keydown", (e) => { if ((e.key === "d" || e.key === "D") && !e.target.closest("input,select,textarea")) toggleDev(); });
+  if (S.devOn) await loadDev();
+  $("#btn-dev").setAttribute("aria-pressed", S.devOn);
   $("#btn-reset").onclick = doReset;
   renderGraphBar();
   selectTab("overview");
@@ -114,9 +118,8 @@ function renderStep() {
   const a = S.art[S.tab]?.[S.step];
   const R = { collect: vCollect, clean: vClean, extract: vExtract, resolve: vResolve, validate: vValidate, load: vLoad }[S.step];
   $("#view").innerHTML = a ? R(a) : `<div class="card"><p class="empty">아직 실행하지 않은 단계입니다. 위의 실행 버튼을 누르세요.</p></div>`;
-  wireDetails();
+  addDev(S.step);
   renderOverlay();
-  if (S.notesOn) renderNotes();
 }
 
 /* ------------------------------------------------------------ helpers for highlighting */
@@ -194,9 +197,9 @@ function vExtract(a) {
   const ref = a.unresolved_references.map((q) => `<tr><td>${esc(q.text)}</td><td class="small">${esc(q.why)}</td></tr>`).join("");
   const L = a.llm;
   return `<h2>3 · 추출</h2><p class="lead">LLM이 온톨로지의 관계 목록 안에서만 사실 후보를 뽑습니다. 목록 밖의 관계와 모르는 용어는 버리지 않고 따로 모읍니다.</p>
-  <div class="card small">${tag(L.mode === "live" ? "실시간 호출" : "녹화본 재생", L.mode === "live" ? "mint" : "blue")}
-    모델 <span class="mono">${esc(L.model)}</span> · ${esc(L.base_url || "")} · ${esc(L.seconds)}초 · 녹화 ${esc(L.recorded_at)} · 프롬프트 ${esc(a.prompt_version)}
-    ${L.prompt_changed ? tag("프롬프트가 녹화 이후 바뀜 — 실시간 호출로 다시 녹화하세요", "orange") : ""}
+  <div class="card small">${tag(L.mode === "live" ? "실시간 호출" : "이전 호출 재생", L.mode === "live" ? "mint" : "blue")}
+    모델 <span class="mono">${esc(L.model)}</span> · ${esc(L.base_url || "")} · ${esc(L.seconds)}초 · 호출 시각 ${esc(L.recorded_at)} · 프롬프트 ${esc(a.prompt_version)}
+    ${L.prompt_changed ? tag("프롬프트가 저장 이후 바뀜 — 실시간 호출로 다시 호출해 저장하세요", "orange") : ""}
     <details style="margin-top:6px"><summary>프롬프트 보기</summary><pre class="raw">${esc(a.prompt.system)}\n\n---- user ----\n${esc(a.prompt.user)}</pre></details></div>
   <div class="cols" style="margin-top:12px"><div class="card"><h4>정제본 · 파란 밑줄 = 사실의 근거 구절</h4>${chunks}</div>
   <div><div class="card"><h4>사실 후보 ${a.facts.length}개</h4><table><tr><th></th><th>주어</th><th>관계</th><th>목적어 · 값</th><th>확신도</th><th>근거</th></tr>${facts}</table></div>
@@ -281,7 +284,7 @@ async function renderOverview() {
       <div class="card"><h4>관계</h4><table>${rels}</table><p class="small sub">속성 사실: Product.status ∈ announced · sampling · mass_production. 회사 간 협력 관계는 v1에 없습니다.</p></div></div>
       <div><div class="card"><h4>업무 질문 (CQ) · run 0 답</h4><table>${cq || '<tr><td class="empty">초기화를 먼저 실행하세요</td></tr>'}</table></div></div></div>
     <div class="card"><h4>기사 코퍼스 (요약은 직접 작성 · 본문은 복제하지 않음)</h4><table><tr><th></th><th></th><th>날짜</th><th>내용</th><th>출처</th></tr>${arts}</table></div>`;
-    showView("baseline"); renderOverlay();
+    addDev("overview"); showView("baseline"); renderOverlay();
   } catch (e) { $("#view").innerHTML = ""; showError(e); }
 }
 
@@ -317,7 +320,7 @@ async function renderCompare() {
         <h4 style="margin-top:10px">용어</h4><table>${addTerm || '<tr><td class="empty">없음</td></tr>'}</table>
         <h4 style="margin-top:10px">동의어 (hidden label)</h4><table>${addLab || '<tr><td class="empty">없음</td></tr>'}</table>
         <p class="small sub">제안 파일: runs/ontology.v1.1.proposal.yaml · ${esc(p.status)}</p></div></div></div>`;
-    showView("diff"); renderOverlay();
+    addDev("compare"); showView("diff"); renderOverlay();
   } catch (e) { $("#view").innerHTML = ""; showError(e); }
 }
 
@@ -404,20 +407,55 @@ function renderOverlay() {
   $("#ov-toggle").onclick = () => { ov.classList.toggle("min"); renderOverlay(); };
 }
 
-/* ------------------------------------------------------------ implementation notes */
-function renderNotes() {
-  const el = $("#notes");
-  el.classList.toggle("on", S.notesOn);
-  if (!S.notesOn) return;
-  const key = S.tab === "compare" ? "compare" : S.tab === "overview" ? null : S.step;
-  const N = S.cfg.dev_notes || {};
-  const sec = (title, arr, color) => arr && arr.length ? `<h3 style="color:var(--${color})">${title}</h3><ul>${arr.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
-  const one = (k) => { const n = N[k] || {}; return sec("가져다 쓴 것 (플랫폼 · 라이브러리)", n.used, "blue") + sec("직접 만든 것", n.built, "mint") + sec("어려웠던 점", n.hard, "orange") + sec("신경 쓴 점", n.care, "purple"); };
-  const label = key ? (S.cfg.steps.find((s) => s.id === key)?.label || "비교") : "전체";
-  el.innerHTML = `<div style="display:flex;align-items:center"><h2>구현 노트 · ${esc(label)}</h2><button class="btn ghost" style="margin-left:auto" onclick="S.notesOn=false;renderNotes()">닫기</button></div>
-    <p class="sub small">docs/dev_notes.yaml · 자세한 결정 기록은 docs/DEV_NOTES.md</p>
-    ${key ? one(key) : Object.keys(N).map((k) => `<h2 style="margin-top:18px">${esc(k)}</h2>${one(k)}`).join("")}`;
+/* ------------------------------------------------------------ 개발자가 한 일 */
+/* docs/dev_work.yaml + 실제 코드 · 정의 파일 (server: /api/devwork, pipeline/devwork.py) */
+const KIND = {
+  code: ["직접 짠 코드", "mint"], define: ["직접 정의한 기준", "purple"], prompt: ["직접 쓴 프롬프트", "blue"],
+  config: ["설정값", "gray"], llm: ["LLM이 맡은 일", "orange"], platform: ["가져다 쓴 것", "gray"],
+};
+async function loadDev() { S.dev = await api("/api/devwork"); }
+async function toggleDev() {
+  S.devOn = !S.devOn;
+  try { localStorage.setItem("demo-dev", S.devOn ? "1" : "0"); } catch (e) { /* private mode */ }
+  $("#btn-dev").setAttribute("aria-pressed", S.devOn);
+  if (S.devOn) { try { await loadDev(); } catch (e) { showError(e); } }
+  if (S.tab === "overview") renderOverview(); else if (S.tab === "compare") renderCompare(); else renderStep();
 }
-function wireDetails() { /* placeholder for future interactions */ }
-
+function addDev(key) {
+  if (!S.devOn || !S.dev) return;
+  $("#view").insertAdjacentHTML("afterbegin", devPanel(key));
+}
+function devSnippet(sn) {
+  if (!sn) return "";
+  const range = sn.path.includes("·") ? "" : ` · ${sn.start}–${sn.end}행${sn.truncated ? ` (앞 ${sn.text.split("\n").length}행만 표시)` : ""}`;
+  return `<details class="dev-code"><summary><span class="mono">${esc(sn.path)}</span>${esc(range)}</summary><pre class="raw">${esc(sn.text)}</pre></details>`;
+}
+function devPanel(key) {
+  const d = S.dev.steps[key];
+  if (!d) return "";
+  const counts = Object.keys(KIND).filter((k) => d.counts[k]).map((k) => tag(`${KIND[k][0]} ${d.counts[k]}`, KIND[k][1])).join(" ");
+  const items = d.items.map((it) => {
+    const [label, color] = KIND[it.kind];
+    let body = it.what ? `<p>${esc(it.what)}</p>` : "";
+    if (it.kind === "platform") {
+      body = `<p><b>개발자가 한 일</b> ${esc(it.did)}</p>${it.gave && it.gave.length ? `<p><b>해 준 것</b> ${it.gave.map((g) => tag(g, "gray")).join(" ")}</p>` : ""}`;
+    }
+    return `<div class="dev-item k-${it.kind}"><div class="dev-it-h">${tag(label, color)} <b>${esc(it.title)}</b></div>${body}${devSnippet(it.snippet)}</div>`;
+  }).join("");
+  const flow = (d.flow || []).map((f) => `<li>${esc(f)}</li>`).join("");
+  const n = d.notes || {};
+  const notes = (n.hard || n.care) ? `<details class="dev-notes"><summary>만들면서 어려웠던 점 · 신경 쓴 점</summary>
+      ${n.hard ? `<h4>어려웠던 점</h4><ul>${n.hard.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      ${n.care ? `<h4>신경 쓴 점</h4><ul>${n.care.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}</details>` : "";
+  const total = Object.values(S.dev.code_files).reduce((a, b) => a + b, 0);
+  return `<section class="dev">
+    <div class="dev-h"><h3>개발자가 한 일 · ${esc(d.label)}</h3>${d.llm ? tag("이 단계는 LLM 사용", "orange") : tag("이 단계는 LLM 안 씀", "mint")}
+      <span class="dev-counts">${counts}</span><button class="btn ghost small" onclick="toggleDev()">닫기 (D)</button></div>
+    <p class="dev-sum">${esc(d.summary)}</p>
+    <div class="dev-grid"><div class="card dev-flow"><h4>이 단계의 처리 순서</h4><ol>${flow}</ol>${d.later ? `<p class="small sub">실서비스에서 더 필요한 것: ${esc(d.later)}</p>` : ""}</div>
+      <div class="dev-items">${items}</div></div>
+    ${notes}
+    <p class="small sub">각 항목의 코드 · 정의는 지금 저장소 파일에서 바로 읽어 온 것입니다 (docs/dev_work.yaml). 이 데모에서 직접 짠 코드는 전체 ${total.toLocaleString()}행입니다(화면 web/ 포함).</p>
+  </section>`;
+}
 boot().catch(showError);

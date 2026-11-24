@@ -46,8 +46,8 @@ pip install --no-index --find-links wheels -r requirements.txt
 - JSON 출력(`response_format: json_object`)을 지원하지 않는 서버라면 `pipeline/llm.py`의 `json_mode` 처리를 바꿉니다. vLLM은 이 형식을 지원합니다.
 - 연결 확인: `python scripts/check_llm.py` (서버 응답 · 모델 이름 · JSON 응답을 확인).
 - 오픈웨이트 모델(vLLM)용 설정: `LLM_EXTRA_BODY`(요청에 합칠 JSON, 예: Qwen3 계열의 생각 모드 끄기 `{"chat_template_kwargs": {"enable_thinking": false}}`), `LLM_JSON_MODE`(response_format 사용 여부), `LLM_TIMEOUT`(초). 응답의 `<think>` 블록 · 코드 울타리 · 앞뒤 설명은 파서가 걷어 냅니다.
-- 모델이 바뀌면 추출 결과도 달라집니다. 화면에서 "실시간 호출"로 한 번 실행하거나 `python scripts/run_all.py --live`로 실행해 **녹화본(`runs/recorded/*.json`)을 새로 만든 뒤** 발표에는 재생 모드를 씁니다.
-- 프롬프트는 `pipeline/extract.py`의 `SYSTEM`입니다. 고치면 `PROMPT_VERSION`을 올립니다. 화면은 녹화 이후 프롬프트가 바뀌었는지 경고합니다.
+- 모델이 바뀌면 추출 결과도 달라집니다. 화면에서 "실시간 호출"로 한 번 실행하거나 `python scripts/run_all.py --live`로 실행해 **저장된 호출(`runs/recorded/*.json`)을 새로 만든 뒤** 발표에는 재생 모드를 씁니다.
+- 프롬프트는 `pipeline/extract.py`의 `SYSTEM`입니다. 고치면 `PROMPT_VERSION`을 올립니다. 화면은 저장 이후 프롬프트가 바뀌었는지 경고합니다.
 
 ## 3. 데이터 바꾸기 (같은 도메인)
 | 바꿀 것 | 파일 | 주의 |
@@ -59,7 +59,7 @@ pip install --no-index --find-links wheels -r requirements.txt
 | STT 발음 | `ontology/phonetic.yaml` | 일반 음절과 겹치면 `after` 규칙(앞 단어 조건)으로 |
 | CQ | `config/demo.yaml`의 `cq` | uid가 바뀌면 함께 고침 |
 
-바꾼 뒤에는 `reset.py`를 실행하고, LLM 녹화본을 새로 만듭니다.
+바꾼 뒤에는 `reset.py`를 실행하고, LLM 저장된 호출을 새로 만듭니다.
 
 ## 4. 도메인 바꾸기 (예: 설비 정비, 계약 문서)
 1. `ontology/ontology.v1.yaml`: 클래스(`key`, `required`, `enums`)와 관계(`from`, `to`, `fact`, `props`), `property_facts`를 새로 씁니다.
@@ -80,4 +80,4 @@ pip install --no-index --find-links wheels -r requirements.txt
 ## 6. 화면 문구와 그래프 질의
 - 단계 이름: `config/demo.yaml`의 `steps`
 - 그래프 패널 버튼의 Cypher: `config/demo.yaml`의 `views`. `$doc_id`, `$run_id`는 화면이 채웁니다.
-- 구현 노트 내용: `docs/dev_notes.yaml`
+- "개발자가 한 일" 패널 내용: `docs/dev_work.yaml` (코드 위치는 함수 이름으로 적고, 테스트가 실제로 있는지 확인)

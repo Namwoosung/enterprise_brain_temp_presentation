@@ -36,7 +36,7 @@ def main():
     except Exception as e:  # noqa: BLE001
         print(f"FAIL     : {base}/models 에 연결할 수 없음 ({e.__class__.__name__}: {e})")
         print("hint     : 프록시(:10000)나 vLLM이 떠 있는지, .env의 LLM_BASE_URL 끝이 /v1 인지 확인")
-        print("           LLM 없이도 녹화본 재생(LLM_MODE=replay)으로 데모는 돌아갑니다.")
+        print("           LLM 없이도 이전 호출 재생(LLM_MODE=replay)으로 데모는 돌아갑니다.")
         return 1
     print(f"served   : {served}")
     if model not in served:

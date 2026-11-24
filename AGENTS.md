@@ -12,7 +12,7 @@
 ## 공통 규칙
 - 작업 전에 바꿀 파일만 엽니다. 발표자료는 **한 장 = 한 파일**(`presentation/js/slides/<id>.js`), 데모 데이터는 `demo/data/`와 `demo/ontology/`의 YAML입니다.
 - 고친 뒤 위 검사를 돌려 `OK`가 나올 때까지 고칩니다. 검사 결과를 보고 없이 "완료"라고 하지 않습니다.
-- 반복되는 기계적 작업은 도구를 씁니다: 장 추가(`presentation/tools/new_slide.py`), 스텝 넣기 · 합치기(`presentation/tools/step.py`), LLM 다시 녹화(`demo/scripts/run_all.py --live`).
+- 반복되는 기계적 작업은 도구를 씁니다: 장 추가(`presentation/tools/new_slide.py`), 스텝 넣기 · 합치기(`presentation/tools/step.py`), LLM 다시 호출해 저장(`demo/scripts/run_all.py --live`).
 - 글은 한국어, 문장은 짧게. 기존 표기(가운뎃점 ` · `, 화살표 `→`)를 따릅니다.
 - `demo/.env`(비밀번호 · 주소)는 git에 올리지 않습니다. Neo4j는 저장소 밖에 따로 설치합니다.
 - 데모 LLM은 `demo/.env`의 `LLM_BASE_URL`(기본 `http://localhost:10000/v1`, vLLM 등 OpenAI 호환 서버)로 연결됩니다. 연결 확인: `demo` 폴더에서 `python scripts/check_llm.py`.

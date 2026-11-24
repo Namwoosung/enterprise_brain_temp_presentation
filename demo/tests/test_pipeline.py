@@ -97,3 +97,11 @@ def test_data_files_are_consistent():
     cd.check_inputs()
     cd.check_cq(uids)
     assert cd.errors == []
+
+
+def test_dev_work_refs_resolve():
+    """Every code / definition reference in docs/dev_work.yaml still exists (web '개발자가 한 일' panel)."""
+    from pipeline import devwork
+    assert devwork.check() == []
+    built = devwork.build()
+    assert set(built["steps"]) >= {"overview", "collect", "clean", "extract", "resolve", "validate", "load", "compare"}

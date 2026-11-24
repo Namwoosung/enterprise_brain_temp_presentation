@@ -30,5 +30,5 @@ AI 에이전트(또는 사람)가 고칠 때는 [AGENTS.md](AGENTS.md)부터 읽
 자세한 내용은 [demo/README.md](demo/README.md)와 [demo/docs/CUSTOMIZE.md](demo/docs/CUSTOMIZE.md)를 보세요.
 1. **Neo4j는 이 저장소에 없습니다.** Neo4j 5.26 Community(zip 배포판 등)를 저장소 밖에 따로 설치하고 실행합니다. 플러그인은 필요 없습니다.
 2. `demo/.env.example`을 `demo/.env`로 복사하고 Neo4j 주소 · 비밀번호, LLM 주소를 적습니다. `.env`는 git에 올라가지 않습니다.
-3. LLM 서버가 없어도 저장된 녹화본(`demo/runs/recorded/`)을 재생해 전 과정이 돌아갑니다. `.env`에 `LLM_MODE=replay`를 두면 항상 녹화본을 씁니다.
+3. LLM 서버가 없어도 저장된 저장된 호출(`demo/runs/recorded/`)을 재생해 전 과정이 돌아갑니다. `.env`에 `LLM_MODE=replay`를 두면 항상 저장된 호출을 씁니다.
 4. `demo/` 폴더에서 가상환경을 만들고 `scripts/check_neo4j.py` → `scripts/reset.py` → `server/app.py` 순서로 실행한 뒤 http://localhost:8800 을 엽니다.

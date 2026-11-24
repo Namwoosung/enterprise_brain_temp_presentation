@@ -194,7 +194,7 @@ def check_inputs():
             if not inp.get(k):
                 err(where, f"config inputs의 '{k}' 가 없음")
         if not re.fullmatch(r"[a-z][a-z0-9_]*", str(inp.get("id"))):
-            err(where, "id 는 소문자 · 숫자 · 밑줄만 (녹화 파일 이름에 쓰임)")
+            err(where, "id 는 소문자 · 숫자 · 밑줄만 (호출 저장 파일 이름에 쓰임)")
         p = ROOT / str(inp.get("file"))
         if not p.exists():
             err(where, f"파일 {inp.get('file')} 이 없음")
@@ -249,10 +249,10 @@ def check_recordings():
             err(f"input {inp['id']}", f"수집 · 정제 단계에서 오류: {e.__class__.__name__}: {e}")
             continue
         if rec is None:
-            warn(f"recording {name}", "녹화본이 없음 → LLM_MODE=live 로 한 번 실행해 만들어야 재생 모드가 동작")
+            warn(f"recording {name}", "저장된 호출이 없음 → LLM_MODE=live 로 한 번 실행해 만들어야 재생 모드가 동작")
         elif rec.get("prompt_hash") != llm.hash_messages(messages):
-            warn(f"recording {name}", "프롬프트가 녹화 때와 다름(데이터 · 사전 · 온톨로지 · 입력 변경) → "
-                                      "LLM_MODE=live 로 다시 녹화해야 결과가 새 데이터를 반영")
+            warn(f"recording {name}", "프롬프트가 저장할 때와 다름(데이터 · 사전 · 온톨로지 · 입력 변경) → "
+                                      "LLM_MODE=live 로 다시 호출해 저장해야 결과가 새 데이터를 반영")
         else:
             notes.append(f"recording {name}: 현재 프롬프트와 일치")
 

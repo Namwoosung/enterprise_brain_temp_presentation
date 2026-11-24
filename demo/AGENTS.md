@@ -17,20 +17,21 @@
 | 클래스 · 관계 정의(구조 변경) | `ontology/ontology.v1.yaml` |
 | 더미 메일 · 회의록 | `data/inputs/mail_hbm_update.md`, `data/inputs/meeting_weekly.stt.md` |
 | 입력 목록 · 정제 규칙 · 임계값 · 업무 질문(CQ) · Browser 질의 | `config/demo.yaml` |
-| LLM 녹화본(발표 때 재생) | `runs/recorded/<입력id>_extract.json` (손으로 고치지 않음) |
+| 저장된 LLM 호출(발표 때 이전 호출 재생) | `runs/recorded/<입력id>_extract.json` (손으로 고치지 않음) |
 | 기계마다 다른 값(Neo4j · LLM 주소) | `.env` (git에 올리지 않음, `.env.example` 참고) |
 
 코드(`pipeline/`, `server/`, `web/`)는 데이터만 바꿀 때는 고칠 필요가 없습니다.
+코드를 고쳐 함수 이름이 바뀌면 `docs/dev_work.yaml`(웹의 "개발자가 한 일" 목록)의 `symbol`도 고칩니다. 안 고치면 `pytest`가 실패합니다.
 
 ## 고친 뒤 검사 순서
 ```
 python scripts/check_data.py      # 1. 데이터 정합성 (Neo4j · LLM 불필요)
 python -m pytest -q               # 2. 단위 테스트 (Neo4j · LLM 불필요)
 python scripts/check_neo4j.py     # 3. Neo4j 연결
-python scripts/run_all.py         # 4. 리셋 + 전체 실행 (녹화본 재생 또는 LLM 호출, .env의 LLM_MODE에 따름)
+python scripts/run_all.py         # 4. 리셋 + 전체 실행 (이전 호출 재생 또는 LLM 호출, .env의 LLM_MODE에 따름)
 ```
 - `check_data.py`가 `ERROR` 없이 `OK`로 끝나야 다음으로 갑니다.
-- `check_data.py`가 **"프롬프트가 녹화 때와 다름"** 경고를 내면 녹화본이 새 데이터와 맞지 않는 것입니다 → 아래 "LLM으로 다시 녹화".
+- `check_data.py`가 **"프롬프트가 저장할 때와 다름"** 경고를 내면 저장된 호출이 새 데이터와 맞지 않는 것입니다 → 아래 "LLM으로 다시 호출해 저장".
 - `run_all.py`가 출력하는 숫자(승인 · 보류, 노드 · 관계 수)가 바뀌었다면 `README.md`의 "발표 전 체크리스트" 숫자도 고칩니다.
 
 ## LLM 연결 (:10000 프록시 → vLLM)
@@ -46,10 +47,10 @@ python scripts/check_llm.py
 - 응답 앞뒤의 `<think>…</think>`, ```` ```json ```` 울타리, 설명 문장은 파서가 걷어 냅니다. 형식이 틀린 사실 후보는 버리고 개수를 `dropped_facts`로 남깁니다.
 - 느린 모델은 `LLM_TIMEOUT`(초)을 늘립니다.
 
-### LLM으로 다시 녹화 (입력 · 데이터 · 사전 · 온톨로지를 바꾼 뒤)
+### LLM으로 다시 호출해 저장 (입력 · 데이터 · 사전 · 온톨로지를 바꾼 뒤)
 ```
 python scripts/run_all.py --live      # LLM을 실제로 불러 runs/recorded/*.json 을 새로 저장
-python scripts/run_all.py --replay    # 방금 녹화본으로 다시 돌려 같은 결과가 나오는지 확인
+python scripts/run_all.py --replay    # 방금 저장된 호출로 다시 돌려 같은 결과가 나오는지 확인
 python scripts/check_data.py          # "현재 프롬프트와 일치"가 나오면 끝
 ```
 모델이 바뀌면 결과(사실 후보 수, 승인 · 보류)도 바뀝니다. 바뀐 결과를 README 체크리스트에 반영합니다.
@@ -67,7 +68,7 @@ LLM 없이 발표할 때는 `.env`에 `LLM_MODE=replay`.
 - `code`는 영문 소문자 · 숫자 · `-`. 노드 id(uid)가 `Company:rebellions`처럼 만들어지므로 **이미 쓰는 code를 바꾸면** 그 uid를 쓰는 기사 사실 · 사전 · CQ를 모두 같이 고쳐야 합니다(`check_data.py`가 찾아 줌).
 - `country`(Company), `issued_by` · `targets`(Policy)는 국가 code를 적으면 관계가 자동으로 생깁니다. 그 국가가 entities에 있어야 합니다.
 - Product의 `status`는 `announced | sampling | mass_production`.
-- `prompt: false`는 그래프 · 사전에는 넣되 LLM 프롬프트의 "알려진 개체" 목록에서는 뺍니다. 메일 · 회의록과 상관없는 노드는 `prompt: false`로 두면 녹화를 다시 하지 않아도 됩니다.
+- `prompt: false`는 그래프 · 사전에는 넣되 LLM 프롬프트의 "알려진 개체" 목록에서는 뺍니다. 메일 · 회의록과 상관없는 노드는 `prompt: false`로 두면 LLM을 다시 호출해 저장하지 않아도 됩니다.
 - 새 노드의 다른 이름(한글명 등)은 `ontology/lexicon.v1.yaml`에 추가합니다:
   `- {ref: "Company:rebellions", pref: Rebellions, alt: [리벨리온], hidden: []}`
 - 노드를 지울 때는 그 uid를 쓰는 기사 사실, 사전 항목, CQ도 지웁니다.
@@ -106,16 +107,16 @@ LLM 없이 발표할 때는 `.env`에 `LLM_MODE=replay`.
   | 지시어 | "지난번처럼", "지난번 HBM 기사 정리" | 질문 항목 |
   | 온톨로지 밖 관계 | 협력 · MOU | 온톨로지 변경 후보 |
   | STT 발음 | "씨오더블유오에스 엘" → CoWoS-L | 발음 복원 |
-- 바꾼 뒤: `check_data.py` → `run_all.py --live`(다시 녹화) → `run_all.py --replay` → 결과 숫자를 README에 반영.
+- 바꾼 뒤: `check_data.py` → `run_all.py --live`(다시 호출해 저장) → `run_all.py --replay` → 결과 숫자를 README에 반영.
 
 ### D. 입력 문서 추가 · 빼기
-`config/demo.yaml`의 `inputs`에 `{id: 소문자id, label: 화면 이름, file: data/inputs/파일.md}`를 추가하거나 지웁니다. 화면 탭은 자동으로 생깁니다. 새 입력은 녹화본이 없으므로 `run_all.py --live`가 필요합니다.
+`config/demo.yaml`의 `inputs`에 `{id: 소문자id, label: 화면 이름, file: data/inputs/파일.md}`를 추가하거나 지웁니다. 화면 탭은 자동으로 생깁니다. 새 입력은 저장된 호출이 없으므로 `run_all.py --live`가 필요합니다.
 
 ### E. 업무 질문(CQ) 바꾸기
 `config/demo.yaml`의 `cq`. Cypher 안의 `uid:'Company:…'`가 entities에 있는지 `check_data.py`가 확인합니다. 결과는 웹 "비교 · 결과" 화면과 `run_all.py` 끝에 나옵니다.
 
 ### F. 구조 변경(클래스 · 관계 추가)
-`ontology/ontology.v1.yaml`에 추가하면 제약조건, LLM 프롬프트, 검증이 자동으로 따라갑니다. LLM 프롬프트가 바뀌므로 반드시 다시 녹화합니다.
+`ontology/ontology.v1.yaml`에 추가하면 제약조건, LLM 프롬프트, 검증이 자동으로 따라갑니다. LLM 프롬프트가 바뀌므로 반드시 다시 호출해 저장합니다.
 `pipeline/extract.py`의 `SYSTEM` 규칙 예문(2~4, 11~12번)은 도메인 예시라 새 관계에 맞는 예를 추가하면 작은 모델의 정확도가 올라갑니다(고치면 `PROMPT_VERSION`을 올림).
 
 ## 테스트가 깨질 때

@@ -427,15 +427,12 @@
   - Apache Airflow 공식 문서(airflow.apache.org/docs) · "Airflow 3.0 is here" 블로그(2025-04)
   - Astronomer, "Intro to Airflow 3"
 
-## Q021. 활용할 수 있는 서비스 · 플랫폼의 라이선스와 각각의 주의사항은? `[ ]`
+## Q021. 활용할 수 있는 서비스 · 플랫폼의 라이선스와 각각의 주의사항은? `[ ]`(정리 미포함)
 - **질문**: 내가 활용할 수 있는 서비스들이나 플랫폼들의 라이선스는? 각각의 주의사항은?
 - **답 요약**:
   - 대부분(Airflow, DuckDB, Parquet, Splink, LinkML, vLLM, APOC, neo4j 드라이버)은 MIT · Apache-2.0이라 사내 사용에 제약이 거의 없다.
   - **Neo4j Community는 GPL-3.0**: 사내에서 그대로 쓰는 건 무료. 수정본을 외부 배포할 때만 소스 공개 의무. 클러스터 · RBAC · 키 제약 등은 Enterprise(상용)만 있다. Desktop의 무료 Enterprise는 로컬 개발용이다.
   - **NVL은 Neo4j 상용 고객 · Aura 전용 독점 라이선스**라 Community와 못 쓴다. Neo4j Browser는 GPL-3.0이라 그대로 쓰는 건 괜찮다.
-  - **모델 라이선스가 가장 주의할 부분**:
-    - GLM-5.3은 MIT가 아닌 자체 라이선스다. Model-as-a-Service 사업을 하는 라이선시나 계열사의 합산 매출이 12개월 100억 달러를 넘으면 상업 이용 전에 Z.AI 보안 심사가 필요하다. 대기업 계열사면 법무 검토가 필요하고, GLM-5.3-Flash는 MIT로 표기되어 있다.
-    - Qwen3.7-Flash는 가중치가 공개되지 않은 API 전용으로 보도된다. vLLM으로 직접 띄우려면 공개 모델(예: Qwen3.8-Flash-Next, `qwen-community-1.0` 라이선스)과 그 약관을 확인해야 한다.
   - 그 밖에: Zingg는 AGPL이라 사내 정책상 피하는 경우가 많다. Docker Desktop은 직원 250명 또는 연매출 1천만 달러를 넘는 기업이면 유료 구독 대상이다. Aura · 외부 LLM API · Auto Ontology 기본 NIM 엔드포인트는 데이터가 외부로 나간다.
   - 상세 표와 출처는 `study/licenses.md`. 법률 자문이 아니므로 도입 전 LICENSE 원문과 사내 법무를 확인한다.
 - **키워드**: GPL-3.0, AGPL-3.0, Apache-2.0, MIT, BSL 1.1, copyleft, Neo4j open core, NVL license, model license, GLM-5.3 License, qwen-community, Docker subscription
@@ -457,3 +454,16 @@
   - ISA-95 / IEC 62264, *Enterprise-control system integration*
   - MESA International, MES 정의 자료
   - ISO 55000(자산 관리) · CMMS · EAM 일반 정의
+
+## Q023. 데모의 "녹화본 재생"은 무슨 뜻인가? `[x]`
+- **질문**: 녹화본 재생이라는 말은 오해가 있을 수 있으니 "이전 호출 재생" 정도로 바꾸는 게 나을 것 같은데, 녹화본 재생의 의미가 그게 맞나?
+- **답 요약**:
+  - 맞다. 화면 녹화가 아니라, **이전에 LLM을 실제로 호출했을 때의 요청과 응답을 파일(`demo/runs/recorded/<입력>_extract.json`)에 저장해 두고, 다음 실행에서는 LLM을 다시 부르지 않고 그 응답을 그대로 쓰는 것**이다.
+  - 저장되는 것: 보낸 메시지(시스템 프롬프트 + 조각 텍스트), 받은 응답, 모델 이름, 걸린 시간, 토큰 사용량, 호출 시각, 프롬프트 해시.
+  - 왜 쓰나: LLM 응답은 같은 입력에도 조금씩 달라질 수 있어 발표 중 숫자가 바뀌면 설명이 깨진다. LLM 서버가 없는 곳에서도 전 과정을 보여 줄 수 있다.
+  - 프롬프트(데이터 · 사전 · 온톨로지 · 입력)가 바뀌면 저장된 호출과 해시가 달라지고, 화면과 `scripts/check_data.py`가 "다시 호출해 저장하라"고 알려 준다.
+  - 같은 방식을 테스트 분야에서는 record/replay(또는 VCR 방식)라고 부른다.
+  - 반영: 화면 · 문서의 "녹화본 재생"을 모두 "이전 호출 재생"으로, "다시 녹화"를 "다시 호출해 저장"으로 바꿨다(덱 11장 노트 포함).
+- **키워드**: record/replay, VCR 테스트, 결정적 재현, prompt hash, LLM_MODE=replay
+- **반영 후보**: 반영함(demo 웹 · README · AGENTS · docs, presentation P11 노트)
+- **출처**: demo/pipeline/llm.py (`chat`) · vcrpy 문서(record/replay 개념)

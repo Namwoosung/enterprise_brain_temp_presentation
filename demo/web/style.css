@@ -124,11 +124,6 @@ details summary{cursor:pointer;color:var(--sub)}
 .busy.on{display:block}
 
 /* notes drawer */
-#notes{position:fixed;top:0;right:0;width:520px;height:100vh;background:var(--panel);border-left:1px solid var(--mint);padding:18px 20px;overflow:auto;transform:translateX(100%);transition:transform .2s;z-index:5}
-#notes.on{transform:none}
-#notes h3{margin-top:14px}
-#notes ul{margin:4px 0 0;padding-left:20px}
-#notes li{margin:3px 0}
 
 /* narrow explanation column: stack instead of squeezing two columns.
    Kept at the end of the file so it wins over the base .cols / .counters rules. */
@@ -137,3 +132,30 @@ details summary{cursor:pointer;color:var(--sub)}
   .counters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) !important}
   .kv{grid-template-columns:120px 1fr}
 }
+
+/* ---- 개발자가 한 일 */
+.btn.toggle[aria-pressed="true"]{background:var(--mint);color:#0b1020;border-color:var(--mint)}
+.dev{border:1.5px solid var(--mint);border-radius:12px;padding:14px 16px;margin:0 0 16px;background:rgba(94,234,212,.05)}
+.dev-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dev-h h3{margin:0;font-size:18px}
+.dev-h .btn{margin-left:auto}
+.dev-counts{display:inline-flex;gap:6px;flex-wrap:wrap}
+.dev-sum{margin:8px 0 12px;font-size:15px;line-height:1.55}
+.dev-grid{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;gap:12px;align-items:start}
+.dev-flow ol{margin:6px 0 0;padding-left:20px}
+.dev-flow li{margin:4px 0;font-size:14px;line-height:1.45}
+.dev-items{display:flex;flex-direction:column;gap:8px}
+.dev-item{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
+.dev-item p{margin:4px 0 0;font-size:14px;line-height:1.45}
+.dev-item.k-code{border-left-color:var(--mint)}
+.dev-item.k-define{border-left-color:var(--purple)}
+.dev-item.k-prompt{border-left-color:var(--blue)}
+.dev-item.k-llm{border-left-color:var(--orange)}
+.dev-item.k-platform{border-left-color:var(--sub);opacity:.92}
+.dev-code{margin-top:6px}
+.dev-code summary{cursor:pointer;font-size:13px;color:var(--sub)}
+.dev-code pre{max-height:420px;overflow:auto;margin-top:6px}
+.dev-notes{margin-top:10px}
+.dev-notes summary{cursor:pointer}
+.dev-notes ul{margin:4px 0;padding-left:20px}
+@container (max-width: 760px){.dev-grid{grid-template-columns:1fr}}

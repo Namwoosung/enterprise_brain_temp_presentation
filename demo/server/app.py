@@ -22,11 +22,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import yaml  # noqa: E402
 
 from pipeline.common import env, config, ontology, corpus, entities, read_artifact  # noqa: E402
 from pipeline.steps import ORDER, run_step  # noqa: E402
-from pipeline import diff, graph, llm  # noqa: E402
+from pipeline import diff, graph, llm, devwork  # noqa: E402
 import reset as reset_mod  # noqa: E402
 
 WEB = ROOT / "web"
@@ -54,7 +53,6 @@ def app_config():
             docs[i["id"]] = read_artifact(i["id"], "collect")["meta"].get("doc_id")
         except FileNotFoundError:
             docs[i["id"]] = None
-    notes_path = ROOT / "docs" / "dev_notes.yaml"
     return {
         "inputs": config()["inputs"], "steps": config()["steps"], "views": config()["views"], "docs": docs,
         "browser": {"proxy": f"http://localhost:{port}/browser/", "direct": env("NEO4J_HTTP_URL", "") + "/browser/",
@@ -62,7 +60,6 @@ def app_config():
         "llm": {"base_url": env("LLM_BASE_URL"), "model": env("LLM_MODEL"), "mode": env("LLM_MODE", "auto"),
                 "server_up": llm.server_up(1)},
         "neo4j": neo4j_status(),
-        "dev_notes": yaml.safe_load(notes_path.read_text(encoding="utf-8")) if notes_path.exists() else {},
     }
 
 
@@ -107,6 +104,8 @@ class App(BaseHTTPRequestHandler):
             return self.api(lambda: read_artifact(q["input"], q["step"]))
         if u.path == "/api/compare":
             return self.api(diff.compare)
+        if u.path == "/api/devwork":
+            return self.api(devwork.build)
         path = WEB / ("index.html" if u.path in ("/", "") else u.path.lstrip("/"))
         if path.is_file() and WEB in path.resolve().parents or path == WEB / "index.html":
             ctype = mimetypes.guess_type(str(path))[0] or "application/octet-stream"
