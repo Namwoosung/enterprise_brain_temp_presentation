@@ -441,3 +441,19 @@
 - **키워드**: GPL-3.0, AGPL-3.0, Apache-2.0, MIT, BSL 1.1, copyleft, Neo4j open core, NVL license, model license, GLM-5.3 License, qwen-community, Docker subscription
 - **반영 후보**: 발표에는 넣지 않음. 30장 "목표 아키텍처" 질의응답 대비 자료. 데모 README의 Docker 안내에 Docker Desktop 유료 조건 한 줄 추가 검토.
 - **출처**: `study/licenses.md`의 출처 목록(Neo4j Licensing, NVL 라이선스 페이지, 각 저장소 LICENSE, GLM-5.3 LICENSE, Qwen 모델 페이지 등)
+
+## Q022. 발표에 계속 나오는 MES, CMMS는 무엇인가? 더미 데이터인가? `[ ]`
+- **질문**: 계속 말하는 MES, CMMS는 뭘 말하는 건가? 그냥 더미 데이터인가?
+- **답 요약**:
+  - 둘 다 실제로 있는 **업무 시스템 종류**의 이름이다. 데이터 자체는 더미지만, 시스템은 제조 현장에 보통 있는 것을 가정했다.
+  - **MES(Manufacturing Execution System, 제조 실행 시스템)**: 공장에서 생산을 실시간으로 관리하는 시스템. 로트가 어느 설비 · 공정을 언제 지났는지, 설비 상태, 레시피, 수율 등을 기록한다. 반도체 팹에서는 거의 반드시 있다. 국제 표준 ISA-95(IEC 62264)의 "레벨 3(제조 운영)"에 해당한다.
+  - **CMMS(Computerized Maintenance Management System, 설비 보전 관리 시스템)**: 설비 정비를 관리하는 시스템. 작업지시(Work Order) 번호, 예방정비(PM) 일정, 고장 정비(CM) 기록, 교체 부품, 담당자, 완료 시각을 남긴다. 더 넓은 범위(자산 수명 · 구매까지)를 다루면 EAM(Enterprise Asset Management)이라고 부른다.
+  - 발표 · 데모에서의 역할: 메일 · 회의록은 사람이 쓴 비정형 문서이고, MES · CMMS는 업무 절차를 거쳐 확정된 **"공식 기록(원천 시스템)"** 의 예다. 그래서 "메일은 3/6 완료라는데 CMMS는 3/7"처럼 둘이 다르면 CMMS를 기준으로 삼고 보류하는 장면(21 · 22장)이 나온다.
+  - 더미인 것: EQ-017, PT-V42, WO-1041/1042, FAB-A/B, CMMS export 파일 내용, 담당자 이름 등 모든 구체 값.
+  - 실제 회사에 적용할 때: 회사마다 이름이 다를 수 있다(자체 개발 MES, 설비 관리 시스템을 EES · FDC 같은 다른 시스템이 일부 맡기도 함). 실제 구축 전에 "작업 번호 · 완료 시각 · 설비 상태의 공식 기록이 어느 시스템에 있는지"를 먼저 조사해야 한다. 이게 온톨로지의 `official`(기준 시스템) 항목을 채우는 근거가 된다.
+- **키워드**: MES, CMMS, EAM, ISA-95, IEC 62264, Work Order, PM/CM, system of record(원천 시스템), EES, FDC
+- **반영 후보**: 2 · 5장 발표자 노트에 "MES = 생산 실행 기록, CMMS = 정비 작업 기록" 한 줄 설명 추가 검토(처음 듣는 청중 대비)
+- **출처**:
+  - ISA-95 / IEC 62264, *Enterprise-control system integration*
+  - MESA International, MES 정의 자료
+  - ISO 55000(자산 관리) · CMMS · EAM 일반 정의
