@@ -507,3 +507,41 @@
 - **키워드**: RDF, RDFS, OWL 2, SKOS, SHACL, Turtle, JSON-LD, 속성 그래프(LPG), GQL, Cypher, SPARQL, LinkML, RDF-star, open/closed world, OBDA, R2RML, GraphRAG
 - **반영 후보**: 9장 또는 23장 앞에 "층 구분" 그림 한 장(정의 YAML → 생성물 → 속성 그래프 → RDF 내보내기) 추가 검토. 2장 concept의 TBox/ABox 설명과 연결.
 - **출처**: W3C RDF 1.1 · OWL 2 Primer · SKOS Reference · SHACL · R2RML · ISO/IEC 39075 GQL · Hogan et al. (2021) · LinkML 문서 · Ontop 문서 · Edge et al. (2024) · Palantir Foundry Ontology 문서
+
+## Q026. RDF · OWL의 등장 배경과, agent용 KG라면 YAML · 속성 그래프를 써도 되는지 (이해한 내용 점검) `[ ]`
+- **질문**: RDF · OWL은 시맨틱 웹을 위해 나왔고, RDF는 트리플 데이터 모델, RDFS · OWL은 그 술어의 의미를 정의해 추론을 가능하게 하는 온톨로지 언어이며 이것도 트리플로 표현된다고 이해했다. 그래서 온톨로지는 기본적으로 OWL로 표현하나? OWL은 같은 관계를 여러 번 두거나 관계에 속성을 붙이려면 관계를 주어로 빼야 해서 트리플이 많아지고, DBMS용으로 나온 게 아니라 DB는 RDB가 우세한 것 아닌가? 최근 enterprise brain · second brain이 확장되며 KG가 주목받았고, 결국 agent를 위해 하는 것이라면 YAML이나 속성 그래프를 써도 되는 것 아닌가?
+- **답 요약** (맞는 부분 / 보완):
+  - **시맨틱 웹 배경 — 맞음.** Berners-Lee 등(2001)이 "사람이 읽는 웹 → 기계가 의미를 처리하는 웹"을 제안했고, 그 데이터 모델이 RDF다.
+    - 보완: 트리플 순서는 **주어 – 술어 – 목적어**. "Web 3.0"은 2000년대에 시맨틱 웹을 가리키던 말이었고, 요즘 "Web3"는 주로 블록체인 쪽 말이라 구분하는 게 좋다.
+  - **RDF만으로는 추론이 거의 안 되고 RDFS · OWL이 의미를 정의 — 대체로 맞음.**
+    - RDF 자체에도 아주 얇은 의미 규칙은 있지만, 실질적인 추론은 RDFS(클래스 계층, domain/range)부터다. 예: `정비작업 rdfs:subClassOf 작업`이면 "WO-1042는 작업"을 추론.
+    - OWL은 그보다 강한 논리(기술 논리)를 더한다: 동치 · 서로소, 개수 제약, 역관계, 이행 관계, 속성 체인.
+    - "의미를 이해"는 사람처럼 이해한다는 뜻이 아니라, **정해진 논리 규칙으로 새 트리플을 도출하고 모순을 찾을 수 있다**는 뜻이다. 실제 추론은 추론기(HermiT, Pellet, RDFox 등)가 한다.
+    - `rdfs:subClassOf`, `owl:Class` 같은 단어 자체도 IRI이고, 온톨로지 파일도 트리플이다 — 맞다.
+  - **온톨로지는 기본적으로 OWL로? — 형식 온톨로지 분야에서는 맞고, 산업 전반에서는 아니다.** 표준 연계 · 추론이 필요하면 OWL이 정석이다. 하지만 업계에서 "온톨로지"라고 부르는 것의 상당수(속성 그래프 스키마, LinkML, Palantir Foundry Ontology, 시맨틱 레이어)는 OWL이 아니다(Q002 · Q025).
+  - **관계에 속성 · 같은 관계 여러 번 — 맞지만 OWL이 아니라 RDF의 성질이다.**
+    - RDF 트리플 자체에는 속성을 붙일 수 없어서 출처 · 기간을 달려면 사실을 노드로 빼는 방식(reification, n-ary 관계 패턴)을 써야 하고 트리플이 늘어난다.
+    - 같은 주어 · 술어 · 목적어 트리플은 두 번 넣어도 하나다(집합). "HBM3를 공급"과 "HBM3E를 공급"을 구분하려면 역시 중간 노드가 필요하다.
+    - 이걸 줄이려고 RDF-star(관계 트리플에 바로 속성을 다는 문법)가 RDF 1.2로 표준화되고 있다.
+  - **DB는 RDB가 우세 — 맞음. 다만 이유는 조금 다르다.**
+    - RDF는 웹의 데이터 교환 모델로 시작했지만, 2000년대부터 트리플 저장소(Jena, Virtuoso, AllegroGraph, GraphDB 등)도 있었다.
+    - RDB가 우세한 이유는 수십 년간 쌓인 트랜잭션 · 성능 · SQL 생태계 · 인력 때문이다. 그래프 DB는 지금도 전체 DB 시장에서 작은 비중이고, 그래프 DB 중에서는 속성 그래프(Neo4j 등)가 개발자 사이에서 더 널리 쓰인다.
+  - **최근 KG가 주목받은 흐름 — 방향은 맞지만 순서 보완.**
+    - 2001 시맨틱 웹 → 2006~2009 Linked Data(DBpedia 등) → **2012 Google Knowledge Graph**("KG"라는 말이 대중화) → 2010년대 기업 KG(Amazon 상품 그래프, LinkedIn, 금융 · 제약 데이터 통합) → **2023년 이후 LLM · RAG와의 결합**(GraphRAG, 2024)으로 다시 크게 주목.
+    - "second brain"은 개인 지식 관리 방법(노트 앱 등)의 유행어이고, "enterprise brain"은 제품 · 마케팅 용어에 가깝다. KG 재부상의 직접 원인은 **LLM의 환각 · 근거 부족을 보완하려는 수요**다.
+  - **agent용이면 YAML · 속성 그래프를 써도 되나 — 된다. 지금 흔한 선택이다.**
+    - agent에게 중요한 것은 OWL 추론보다 ① 흔들리지 않는 개념 · 관계 정의 ② 같은 대상을 같은 ID로 묶은 데이터 ③ 근거와 시점 ④ 도구로 질의할 수 있는 구조(Cypher · SQL · 검색) ⑤ LLM이 읽을 수 있는 개념 설명이다. YAML 정의 + 속성 그래프로 다 할 수 있다.
+    - 실제로 Neo4j GraphRAG, LlamaIndex의 PropertyGraphIndex 같은 LLM 도구들은 속성 그래프를 기본으로 쓰고, MS GraphRAG는 그래프를 표 파일(Parquet)로 저장한다.
+    - 단, KG는 agent만을 위한 것은 아니다. 사람의 검색 · 분석, 데이터 통합, 감사 · 규제 대응에도 쓰인다. 그리고 다음이 필요해지면 RDF · OWL을 고려한다: 외부 표준 어휘와 연결(예: 업계 표준 온톨로지), 여러 조직 간 데이터 교환, 클래스 계층 · 동치 같은 규칙 추론을 DB가 대신 해 주길 원할 때.
+    - 그래서 덱의 입장(정의는 YAML로 따로, 데이터는 속성 그래프, RDF는 필요할 때 내보내기)이 이 판단과 같다.
+- **키워드**: Semantic Web, Linked Data, RDF Semantics, RDFS entailment, OWL 2 DL, reasoner, reification, n-ary relation, RDF-star / RDF 1.2, Google Knowledge Graph, GraphRAG, LLM grounding, PropertyGraphIndex
+- **반영 후보**: 2장 concept(TBox/ABox)에 "RDF는 데이터 모델, RDFS · OWL은 그 위의 의미 정의" 한 줄. 23장 discuss("왜 RDF/OWL이 아니라 속성 그래프인가")의 답을 이 정리로 보강. `study/ontology_formats.md`와 같이 보기.
+- **출처**:
+  - Berners-Lee, Hendler & Lassila, "The Semantic Web", *Scientific American* (2001)
+  - W3C, *RDF 1.1 Concepts* · *RDF 1.1 Semantics* (2014) · RDF 1.2 작업 문서
+  - W3C, *OWL 2 Web Ontology Language Document Overview* (2012)
+  - W3C, *Defining N-ary Relations on the Semantic Web* (Working Group Note, 2006)
+  - Singhal, "Introducing the Knowledge Graph: things, not strings", Google 블로그 (2012)
+  - Noy et al., "Industry-scale Knowledge Graphs: Lessons and Challenges", *CACM* 62(8), 2019
+  - Hogan et al., "Knowledge Graphs", *ACM Computing Surveys* (2021)
+  - Edge et al., "From Local to Global: A Graph RAG Approach to Query-Focused Summarization" (2024)
