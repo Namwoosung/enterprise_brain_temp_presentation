@@ -27,6 +27,7 @@ table.tb.lg th{font-size:16px;padding:10px 14px}
 /* stage summary slides: highlighted "our choice" row */
 table.tb tr.pick td{background:rgba(94,234,212,.10)}
 table.tb tr.pick td:first-child{box-shadow:inset 5px 0 0 var(--mint)}
+table.tb td.pick,table.tb th.pick{background:rgba(94,234,212,.14)}
 .todo{margin:6px 0 0;padding-left:26px}
 .todo li{margin:0 0 12px;color:var(--fg)}
 .todo li b{display:block}

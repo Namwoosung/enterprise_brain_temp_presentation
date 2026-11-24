@@ -9,7 +9,7 @@
 ## 구성
 | 폴더 | 내용 |
 |---|---|
-| [`presentation/`](presentation/) | 발표자료(40장, HTML). 빌드 없이 브라우저로 엽니다 |
+| [`presentation/`](presentation/) | 발표자료(42장, HTML). 빌드 없이 브라우저로 엽니다 |
 | [`demo/`](demo/) | 온톨로지 구축 데모(Python + Neo4j, 반도체 · AI 뉴스 KG). 설치와 사용법은 [demo/README.md](demo/README.md) |
 
 ## 고치는 방법

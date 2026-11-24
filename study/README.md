@@ -6,7 +6,7 @@
 ## 읽는 순서
 | 장 | 문서 | 다루는 것 | 바탕 질문 |
 |---|---|---|---|
-| 1 | [01_kg_and_ontology.md](01_kg_and_ontology.md) | TBox/ABox, RDF · OWL · 속성 그래프 · YAML 구분, agent용 KG, 비전문가의 온톨로지 시작법 | Q001 · Q002 · Q010 · Q012 · Q025 · Q026 |
+| 1 | [01_kg_and_ontology.md](01_kg_and_ontology.md) | TBox/ABox, RDF · OWL · 속성 그래프 · YAML 구분, agent용 KG, 비전문가의 온톨로지 시작법, 표현 방식 다섯 가지와 우리 선택 | Q001 · Q002 · Q010 · Q012 · Q025 · Q026 · Q037 |
 | 2 | [02_collect_and_store.md](02_collect_and_store.md) | MES · CMMS, 수집 방식 선택, 복사 vs 참조, 저장 계층, 기준 KG, 문서 파싱 · 데이터 계약 | Q003 · Q005 · Q022 · Q024 · Q028 · Q031 |
 | 3 | [03_clean_and_resolve.md](03_clean_and_resolve.md) | 정규화 층, 사람은 기준을 고친다, Entity Resolution, 임베딩 후보 · 능동 학습 | Q006 · Q007 · Q011 · Q029 · Q033 |
 | 4 | [04_extract_and_validate.md](04_extract_and_validate.md) | 추출 방법 선택, 정의 파일 → 검사 장치, 구조화 출력, 검증 순서, 사람 라우팅, 질문 큐, LLM 판정 보정 | Q012 · Q013 · Q015 · Q017 · Q023 · Q027 · Q034 |
@@ -16,7 +16,8 @@
 ## 깊이 보는 자료
 | 문서 | 내용 | 관련 |
 |---|---|---|
-| [ontology_formats.md](ontology_formats.md) | 같은 예를 YAML · JSON Schema · Cypher · OWL · RDF · SHACL로 각각 적어 비교, 일반적인 KG 구축 방식 다섯 가지 | 1장 · Q025 |
+| [ontology_formats.md](ontology_formats.md) | 같은 예를 YAML · JSON Schema · Cypher · OWL · RDF · SHACL로 각각 적어 비교, KG 구축 방식 다섯 가지의 구현(같은 질문을 SPARQL · Cypher · LinkML · R2RML · GraphRAG로)과 장단점, 이 발표가 고른 이유 | 1장 · Q025 · Q037 |
+| [pipeline_build_guide.md](pipeline_build_guide.md) | 이 발표의 방식으로 전체 파이프라인을 실제로 만드는 법: 정의 파일 · 생성기 · 단계별 코드 예 · 고려할 점 · 운영 · 도입 순서 · 점검표 · 데모 대응표 | 1~6장 전체 · Q037 |
 | [auto_ontology.md](auto_ontology.md) | NVIDIA Auto Ontology 내부 동작 상세 조사 | 6장 · Q019 |
 | [airflow_dag.md](airflow_dag.md) | Airflow 용어 표, Airflow 3 변화, 우리 파이프라인 DAG 예시 | 6장 · Q020 |
 

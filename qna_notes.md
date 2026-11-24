@@ -9,7 +9,7 @@
 - 반영 후보: 관련 슬라이드(P01–P31, P17a 등 id) 또는 학습 가이드 장, 반영 여부
 - 출처: 답의 근거가 된 문서나 링크
 
-**장 번호:** 답에 쓴 "22장" 등은 슬라이드 id 기준이다(P22 = 22장). 2026-11-24에 P17a를 추가해서 화면의 쪽 번호는 P18부터 1씩 밀렸다(P22는 화면에서 23쪽).
+**장 번호:** 답에 쓴 "22장" 등은 슬라이드 id 기준이다(P22 = 22장). 중간에 장(P02a · P02b · P02c · P14a · P17a 등)을 넣어서 화면의 쪽 번호는 id 숫자보다 뒤다. 화면 쪽 번호는 덱에서 확인한다.
 
 **상태 표시:** `[ ]` 아직 반영 안 함 · `[x]` 반영함 · `[-]` 반영하지 않기로 함
 
@@ -656,3 +656,15 @@
 - **주의**: 그래프를 따라가면 맥락이 빨리 불어난다. 따라갈 관계 종류와 단계 수를 제한. 품질 측정은 발표 4.
 - **연결**: 23 · 30장, 발표 3 · 4
 - **출처**: Edge et al., "From Local to Global: A Graph RAG Approach to Query-Focused Summarization" (Microsoft, 2024) · Neo4j GraphRAG Python 문서(retrievers) · Peng et al., "Graph Retrieval-Augmented Generation: A Survey" (2024)
+
+## Q037. 온톨로지 표현 방식별 구현 · 장단점, 이 발표의 선택 이유, 실제 구축 가이드 `[x]`
+- **질문**: 온톨로지를 표현하는 방법론들의 각각의 구현 방법 및 특징, 장단점을 발표자료와 study 자료에 추가. 이 발표에서 왜 지금의 방법론을 선택했는지도 추가. 선택한 방법론으로 실제 온톨로지 구축 전체 파이프라인을 만든다면 어떤 부분을 어떻게 구현하고 무엇을 고려해야 하는지, 실제 예시를 포함한 문서를 새로 만들기.
+- **답 요약**:
+  - 표현 · 구현 방식은 다섯 갈래로 정리된다. A 시맨틱 웹(OWL → RDF 저장소 · SPARQL · SHACL), B 속성 그래프(라벨 · 관계 → 그래프 DB · Cypher), C 혼합(정의는 YAML · LinkML로 Git에, 거기서 스키마 · 제약 생성, 데이터는 속성 그래프), D 가상 KG(온톨로지 + 테이블 매핑 → 질의 때 SQL), E LLM 추출(문서 → LLM → 그래프 + 벡터). 실제 프로젝트는 대개 둘 이상을 섞는다.
+  - 비교 기준: 정의를 어디에 두고 누가 고치나 · 데이터를 복사하나 · 관계에 근거 · 기간을 어디에 붙이나 · 추론이 필요한가 · 문서를 다루나.
+  - 이 발표의 선택은 C를 기본으로 D(대량 값은 원천 참조)와 E(문서는 고정 스키마 추출)를 붙인 조합. 이유는 우리 조건 일곱 가지(agent의 관계 탐색, 관계별 근거 · 기간, 문서 비중, 잦은 정의 변경과 전문가 diff 검토, 팀 · 오픈웨이트 agent의 수정 가능성, 대량 값 비복사, 틀린 사실 금지)에 가장 많이 맞기 때문.
+  - 포기한 것은 OWL 표준 추론과 전역 IRI 연결. 정의가 한 파일에 있으므로 필요하면 OWL · SHACL을 생성해 내보낸다. 표준 어휘 교환이 필수가 되거나 분류 추론이 핵심이 되면 A 쪽, 정형 DB만 남으면 D 중심으로 다시 고른다.
+  - 구축 가이드: 먼저 CQ · 원천 · ID 규칙 · 검토 기준 · 그래프/원천 구분을 정하고 → 정의 파일 하나에서 JSON Schema · 검증 규칙 · DB 제약을 생성 → 수집(원본 불변 · 수집 원장 · 권한) → 정제 · ER(합치기 신중, 사람 판정은 사전으로) → 추출(정형은 매핑 파일, 문서는 구조화 출력 + 호출 기록) → 검증 4층 + 위험도 × 확신도 라우팅 → 멱등 적재 · staging/publish · 무효화 · Dataset 참조 → CQ · 표본 · 골든셋 평가 → 오케스트레이션 · 버전 다섯 가지 기록 · 모니터링 · 보안. 정형 뼈대를 문서 추출보다 먼저 만든다.
+- **키워드**: 시맨틱 웹, 속성 그래프, LinkML, R2RML · Ontop, GraphRAG, SimpleKGPipeline, 구조화 출력, 멱등 MERGE, staging/publish, bi-temporal, CQ 테스트, 골든셋, run manifest
+- **반영**: P02b(방식 다섯 가지 비교) · P02c(우리 조건 × 방식, 고른 조합, 포기한 것 · 다시 볼 조건) 추가. study/ontology_formats.md 3절(방식별 구현) · 4절(선택 이유), study/01_kg_and_ontology.md 1.6절, 새 문서 study/pipeline_build_guide.md.
+- **출처**: Hogan et al., "Knowledge Graphs" (ACM CSUR 2021) · W3C OWL 2 · SHACL · R2RML · LinkML 문서 · Ontop 문서 · Neo4j Cypher Manual · Neo4j GraphRAG Python 문서 · Microsoft GraphRAG 문서 · vLLM Structured Outputs 문서 · Apache Airflow 3 문서
