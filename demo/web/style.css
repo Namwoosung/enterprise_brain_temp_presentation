@@ -133,7 +133,7 @@ details summary{cursor:pointer;color:var(--sub)}
   .kv{grid-template-columns:120px 1fr}
 }
 
-/* ---- 개발자가 한 일 */
+/* ---- 구현 내용 */
 .btn.toggle[aria-pressed="true"]{background:var(--mint);color:#0b1020;border-color:var(--mint)}
 .dev{border:1.5px solid var(--mint);border-radius:12px;padding:14px 16px;margin:0 0 16px;background:rgba(94,234,212,.05)}
 .dev-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

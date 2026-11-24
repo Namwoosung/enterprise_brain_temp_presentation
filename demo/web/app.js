@@ -407,7 +407,7 @@ function renderOverlay() {
   $("#ov-toggle").onclick = () => { ov.classList.toggle("min"); renderOverlay(); };
 }
 
-/* ------------------------------------------------------------ 개발자가 한 일 */
+/* ------------------------------------------------------------ 구현 내용 */
 /* docs/dev_work.yaml + 실제 코드 · 정의 파일 (server: /api/devwork, pipeline/devwork.py) */
 const KIND = {
   code: ["직접 짠 코드", "mint"], define: ["직접 정의한 기준", "purple"], prompt: ["직접 쓴 프롬프트", "blue"],
@@ -438,7 +438,7 @@ function devPanel(key) {
     const [label, color] = KIND[it.kind];
     let body = it.what ? `<p>${esc(it.what)}</p>` : "";
     if (it.kind === "platform") {
-      body = `<p><b>개발자가 한 일</b> ${esc(it.did)}</p>${it.gave && it.gave.length ? `<p><b>해 준 것</b> ${it.gave.map((g) => tag(g, "gray")).join(" ")}</p>` : ""}`;
+      body = `<p><b>연동 작업</b> ${esc(it.did)}</p>${it.gave && it.gave.length ? `<p><b>해 준 것</b> ${it.gave.map((g) => tag(g, "gray")).join(" ")}</p>` : ""}`;
     }
     return `<div class="dev-item k-${it.kind}"><div class="dev-it-h">${tag(label, color)} <b>${esc(it.title)}</b></div>${body}${devSnippet(it.snippet)}</div>`;
   }).join("");
@@ -449,7 +449,7 @@ function devPanel(key) {
       ${n.care ? `<h4>신경 쓴 점</h4><ul>${n.care.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}</details>` : "";
   const total = Object.values(S.dev.code_files).reduce((a, b) => a + b, 0);
   return `<section class="dev">
-    <div class="dev-h"><h3>개발자가 한 일 · ${esc(d.label)}</h3>${d.llm ? tag("이 단계는 LLM 사용", "orange") : tag("이 단계는 LLM 안 씀", "mint")}
+    <div class="dev-h"><h3>구현 내용 · ${esc(d.label)}</h3>${d.llm ? tag("이 단계는 LLM 사용", "orange") : tag("이 단계는 LLM 안 씀", "mint")}
       <span class="dev-counts">${counts}</span><button class="btn ghost small" onclick="toggleDev()">닫기 (D)</button></div>
     <p class="dev-sum">${esc(d.summary)}</p>
     <div class="dev-grid"><div class="card dev-flow"><h4>이 단계의 처리 순서</h4><ol>${flow}</ol>${d.later ? `<p class="small sub">실서비스에서 더 필요한 것: ${esc(d.later)}</p>` : ""}</div>

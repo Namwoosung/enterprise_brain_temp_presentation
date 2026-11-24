@@ -1,4 +1,4 @@
-"""'개발자가 한 일' panel: docs/dev_work.yaml + the real source / definition text it points to.
+"""'구현 내용' panel: docs/dev_work.yaml + the real source / definition text it points to.
 
 Every ref is resolved from the files on disk when the page asks, so the panel cannot drift from
 the code. tests/test_pipeline.py checks that every ref still resolves.

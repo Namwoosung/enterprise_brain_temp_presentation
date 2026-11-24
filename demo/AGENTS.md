@@ -21,7 +21,7 @@
 | 기계마다 다른 값(Neo4j · LLM 주소) | `.env` (git에 올리지 않음, `.env.example` 참고) |
 
 코드(`pipeline/`, `server/`, `web/`)는 데이터만 바꿀 때는 고칠 필요가 없습니다.
-코드를 고쳐 함수 이름이 바뀌면 `docs/dev_work.yaml`(웹의 "개발자가 한 일" 목록)의 `symbol`도 고칩니다. 안 고치면 `pytest`가 실패합니다.
+코드를 고쳐 함수 이름이 바뀌면 `docs/dev_work.yaml`(웹의 "구현 내용" 목록)의 `symbol`도 고칩니다. 안 고치면 `pytest`가 실패합니다.
 
 ## 고친 뒤 검사 순서
 ```

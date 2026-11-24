@@ -80,4 +80,4 @@ pip install --no-index --find-links wheels -r requirements.txt
 ## 6. 화면 문구와 그래프 질의
 - 단계 이름: `config/demo.yaml`의 `steps`
 - 그래프 패널 버튼의 Cypher: `config/demo.yaml`의 `views`. `$doc_id`, `$run_id`는 화면이 채웁니다.
-- "개발자가 한 일" 패널 내용: `docs/dev_work.yaml` (코드 위치는 함수 이름으로 적고, 테스트가 실제로 있는지 확인)
+- "구현 내용" 패널 내용: `docs/dev_work.yaml` (코드 위치는 함수 이름으로 적고, 테스트가 실제로 있는지 확인)
