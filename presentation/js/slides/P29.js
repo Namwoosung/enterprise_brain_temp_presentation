@@ -7,7 +7,7 @@
     id: 'P29', steps: 3, section: '6 · 부록', ctxSub: '최신 기술', badge: '공개 자료 기준 · 2026-11',
     title: '최신 도구에서 가져올 힌트',
     takeaway: '도구를 통째로 쓰기보다, 각 도구가 해결한 한 가지를 우리 파이프라인 단계에 가져옵니다',
-    src: 'NVIDIA Auto Ontology · MS GraphRAG 1.0 · Neo4j GraphRAG Python · Graphiti · graphify · Airflow 3 공개 문서',
+    src: '공개 문서: Auto Ontology · MS GraphRAG · Neo4j GraphRAG · Graphiti · graphify · Airflow 3',
     html() {
       const T = [
         ['NVIDIA Auto Ontology', 'RDB 메타데이터 · 쿼리 이력 → Generate → Certify(사람) → Answer(text-to-SQL) · Postgres + pgvector', '사람 인증 단계를 제품에 내장'],

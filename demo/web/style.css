@@ -90,7 +90,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}
 th{text-align:left;color:var(--sub);font-weight:600;font-size:13px;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:7px 8px;border-bottom:1px solid rgba(38,50,77,.6);vertical-align:top}
 tr.removed td{color:var(--sub)}
-.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;font-size:15px}
+.kv{display:grid;grid-template-columns:150px minmax(0,1fr);gap:4px 12px;font-size:15px}
 .kv .k{color:var(--sub);font-family:var(--mono);font-size:14px}
 .tag{display:inline-block;padding:1px 8px;border-radius:6px;font-size:13px;border:1px solid var(--line);white-space:nowrap}
 .tag.mint{border-color:var(--mint);color:var(--mint)} .tag.red{border-color:var(--red);color:var(--red)}
@@ -130,7 +130,7 @@ details summary{cursor:pointer;color:var(--sub)}
 @container (max-width: 980px){
   .cols,.cols.c3{grid-template-columns:1fr}
   .counters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) !important}
-  .kv{grid-template-columns:120px 1fr}
+  .kv{grid-template-columns:120px minmax(0,1fr)}
 }
 
 /* ---- 구현 내용 */
@@ -159,3 +159,10 @@ details summary{cursor:pointer;color:var(--sub)}
 .dev-notes summary{cursor:pointer}
 .dev-notes ul{margin:4px 0;padding-left:20px}
 @container (max-width: 760px){.dev-grid{grid-template-columns:1fr}}
+
+/* ---- keep long content inside narrow columns (layout audit 2026-11-24) */
+.cols > *, .dev-grid > *, .card { min-width: 0; }
+td { overflow-wrap: anywhere; }
+td .tag, .card .tag { white-space: normal; }
+td.mono, td .mono, .chunk { overflow-wrap: anywhere; }
+.kv > * { min-width: 0; overflow-wrap: anywhere; }
